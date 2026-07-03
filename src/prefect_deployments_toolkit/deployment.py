@@ -216,7 +216,6 @@ def apply_single_deployment(deployment_name: str, ctx: DeploymentContext) -> Non
         job_vars = _build_job_variables(ctx, merged_file, full_name)
         logger.info("Tags: %s", tags)
         logger.info("Job variables: %s", job_vars)
-        logger.info("Backend: %s", ctx.backend)
 
         ctx.client.deploy(full_name, tags, job_vars, merged_file)
         time.sleep(0.01)
@@ -229,10 +228,8 @@ def apply_single_deployment(deployment_name: str, ctx: DeploymentContext) -> Non
             ctx.client.delete_deployment(f"{flow_name}/{full_name}")
             flow_name = prefect_api.get_flow_name(new_flow_id)
 
-        if not flow_name:
+        if not flow_name and new_flow_id:
             logger.info("New deployment — retrieving flow name from Prefect Cloud post-deploy...")
-            post_ids = prefect_api.get_flow_ids_for_deployment(full_name)
-            new_flow_id = post_ids[0] if post_ids else ""
             flow_name = prefect_api.get_flow_name(new_flow_id) if new_flow_id else None
 
         # If duplicates existed under other flows and enforcement is on,

@@ -73,7 +73,7 @@ def _run_deployment(
 
     Returns the deployment_name if it failed, None on success.
     """
-    separator = "#" * 60
+    separator = "#" * 50
     with buffered_deployment_log(deployment_name):
         logger.info("%s [%d/%d] %s %s", separator, index, total, deployment_name, separator)
         try:
