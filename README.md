@@ -83,7 +83,7 @@ Each deployment YAML file must declare a `deployments:` list with at least a `na
 
 ## License
 
-Licensed under [PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0). You may view, use, and modify this software for noncommercial purposes. Commercial use — including building products, services, or automation on top of it — requires a separate license. Contact [your contact info] for commercial licensing inquiries.
+Licensed under [PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0). You may view, use, and modify this software for noncommercial purposes. Commercial use — including building products, services, or automation on top of it — requires a separate license. Contact `kwolski@dyvenia.com` for commercial licensing inquiries.
 
 ## Contributing
 
