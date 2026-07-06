@@ -288,6 +288,18 @@ def get_schedule_ids(full_deployment_name: str) -> list[str]:
     return [s["id"] for s in sched_response.json()]
 
 
+def get_variable(variable_name: str) -> object | None:
+    """Return a Prefect Variable's value by name, or None if it doesn't exist."""
+    response = request(
+        "GET",
+        f"{_base_url()}/variables/name/{variable_name}",
+        headers=_auth_headers(),
+    )
+    if response.status_code == 404:
+        return None
+    response.raise_for_status()
+    return response.json()["value"]
+
 def close_client() -> None:
     """Explicitly close the shared client (call at process exit if needed)."""
     global _client

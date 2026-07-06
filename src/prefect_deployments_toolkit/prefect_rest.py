@@ -44,6 +44,7 @@ import importlib.util
 import logging
 import sys
 import threading
+import re
 from pathlib import Path
 
 import yaml as _yaml
@@ -54,6 +55,9 @@ logger = logging.getLogger(__name__)
 
 _flow_object_cache: dict[str, object] = {} # entrypoint -> resolved Flow object
 _flow_name_cache: dict[str, str] = {}  # entrypoint -> resolved flow name
+
+_VARIABLE_PATTERN = re.compile(r"\{\{\s*prefect\.variables\.([a-zA-Z0-9_\-]+)\s*\}\}")
+_variable_cache: dict[str, object] = {}
 
 # Serializes ALL entrypoint imports process-wide. CPython's per-module import
 # lock can deadlock when multiple threads concurrently import modules that
@@ -217,6 +221,39 @@ def _build_api_schedules(spec: dict) -> list[dict]:
         )
     return api_schedules
 
+def _get_cached_variable(variable_name: str):
+    """Fetch a Prefect Variable's value, caching it for the life of this process."""
+    if variable_name in _variable_cache:
+        return _variable_cache[variable_name]
+    value = prefect_api.get_variable(variable_name)
+    if value is None:
+        raise ValueError(f"Prefect variable '{variable_name}' does not exist.")
+    _variable_cache[variable_name] = value
+    return value
+
+
+def _resolve_variables(value):
+    """Recursively resolve '{{ prefect.variables.NAME }}' placeholders.
+
+    Placeholders can appear anywhere inside a string, including multiple
+    times in the same value — each occurrence is replaced independently.
+    """
+    if isinstance(value, str):
+        if not _VARIABLE_PATTERN.search(value):
+            return value
+
+        def _replace(match: re.Match) -> str:
+            variable_name = match.group(1)
+            resolved = _get_cached_variable(variable_name)
+            return str(resolved)
+
+        return _VARIABLE_PATTERN.sub(_replace, value)
+    if isinstance(value, dict):
+        return {k: _resolve_variables(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_resolve_variables(v) for v in value]
+    return value
+
 
 def deploy(
     deployment_name: str,
@@ -235,7 +272,7 @@ def deploy(
     flow_id = _get_or_create_flow_id_by_name(flow_name)
 
     work_pool_name = spec.get("work_pool", {}).get("name")
-    parameters = spec.get("parameters", {})
+    parameters = _resolve_variables(spec.get("parameters", {}))
     parameter_openapi_schema = flow_obj.parameters.model_dump(mode="json")
     schedules = _build_api_schedules(spec)
 
