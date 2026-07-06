@@ -63,7 +63,7 @@ def _parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _run_deployment(
+def _apply_deployment(
     deployment_name: str,
     index: int,
     total: int,
@@ -121,7 +121,7 @@ def main() -> None:
 
     with ThreadPoolExecutor(max_workers=workers) as executor:
         futures = {
-            executor.submit(_run_deployment, name, i, total, ctx): name
+            executor.submit(_apply_deployment, name, i, total, ctx): name
             for i, name in enumerate(names, start=1)
         }
         for future in as_completed(futures):

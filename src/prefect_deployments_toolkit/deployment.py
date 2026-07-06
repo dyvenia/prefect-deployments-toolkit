@@ -6,7 +6,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from . import prefect_api, prefect_cli, prefect_rest, yaml_utils
+from . import prefect_cli, prefect_rest, yaml_utils
 
 logger = logging.getLogger(__name__)
 
@@ -54,14 +54,14 @@ def _resolve_flow_name(deployment_name: str, ctx: DeploymentContext) -> tuple[st
         deploy, in apply_single_deployment, once we know the flow this
         entrypoint currently resolves to.
     """
-    flow_ids = prefect_api.get_flow_ids_for_deployment(deployment_name)
+    flow_ids = prefect_rest.get_flow_ids_for_deployment(deployment_name)
 
     if len(flow_ids) <= 1:
         flow_id = flow_ids[0] if flow_ids else ""
-        flow_name = prefect_api.get_flow_name(flow_id) if flow_id else None
+        flow_name = prefect_rest.get_flow_name(flow_id) if flow_id else None
         return flow_id, flow_name
 
-    flow_names = [prefect_api.get_flow_name(fid) for fid in flow_ids]
+    flow_names = [prefect_rest.get_flow_name(fid) for fid in flow_ids]
     logger.warning(
         "Deployment name '%s' is currently used by %d different flows: %s. "
         "Deployment names should be globally unique.",
@@ -93,11 +93,11 @@ def _cleanup_duplicate_deployments(
     """Delete every deployment named `deployment_name` under a flow OTHER than
     current_flow_id. Only called when ctx.enforce_unique_deployment_names=True.
     """
-    flow_ids = prefect_api.get_flow_ids_for_deployment(deployment_name)
+    flow_ids = prefect_rest.get_flow_ids_for_deployment(deployment_name)
     stale_flow_ids = [fid for fid in flow_ids if fid != current_flow_id]
 
     for stale_flow_id in stale_flow_ids:
-        stale_flow_name = prefect_api.get_flow_name(stale_flow_id)
+        stale_flow_name = prefect_rest.get_flow_name(stale_flow_id)
         logger.warning(
             "Deleting duplicate deployment '%s' under flow '%s' (flow_id=%s) — "
             "keeping the one under current flow '%s' (flow_id=%s).",
@@ -149,7 +149,7 @@ def _handle_schedules(
 
     if not deployment_has_schedules:
         logger.info("No schedules in YAML — removing any existing schedules from Prefect Cloud...")
-        schedule_ids = prefect_api.get_schedule_ids(f"{flow_name}/{full_name}")
+        schedule_ids = prefect_rest.get_schedule_ids(f"{flow_name}/{full_name}")
         for sid in schedule_ids:
             ctx.client.delete_schedule(f"{flow_name}/{full_name}", sid)
         if not schedule_ids:
@@ -158,7 +158,7 @@ def _handle_schedules(
 
     if ctx.enable_schedule:
         logger.info("Resuming all schedules for '%s'...", full_name)
-        schedule_ids = prefect_api.get_schedule_ids(f"{flow_name}/{full_name}")
+        schedule_ids = prefect_rest.get_schedule_ids(f"{flow_name}/{full_name}")
         for sid in schedule_ids:
             ctx.client.resume_schedule(f"{flow_name}/{full_name}", sid)
     else:
@@ -221,16 +221,16 @@ def apply_single_deployment(deployment_name: str, ctx: DeploymentContext) -> Non
         time.sleep(0.01)
 
         # Detect flow rename: if flow_id changed post-deploy, clean up the old deployment
-        new_flow_ids = prefect_api.get_flow_ids_for_deployment(full_name)
+        new_flow_ids = prefect_rest.get_flow_ids_for_deployment(full_name)
         new_flow_id = new_flow_ids[0] if new_flow_ids else ""
         if flow_id and new_flow_id and new_flow_id != flow_id:
             logger.info("Flow changed post-deploy — removing stale deployment under old flow.")
             ctx.client.delete_deployment(f"{flow_name}/{full_name}")
-            flow_name = prefect_api.get_flow_name(new_flow_id)
+            flow_name = prefect_rest.get_flow_name(new_flow_id)
 
         if not flow_name and new_flow_id:
             logger.info("New deployment — retrieving flow name from Prefect Cloud post-deploy...")
-            flow_name = prefect_api.get_flow_name(new_flow_id) if new_flow_id else None
+            flow_name = prefect_rest.get_flow_name(new_flow_id) if new_flow_id else None
 
         # If duplicates existed under other flows and enforcement is on,
         # clean up everything except the deployment matching the current flow.
