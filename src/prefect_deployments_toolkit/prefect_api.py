@@ -58,7 +58,7 @@ def _auth_headers() -> dict[str, str]:
     elif auth_string:
         import base64
         encoded = base64.b64encode(auth_string.encode()).decode()
-        headers["Authorization"] = f"Basic {encoded}"  
+        headers["Authorization"] = f"Basic {encoded}"
 
     return headers
 
