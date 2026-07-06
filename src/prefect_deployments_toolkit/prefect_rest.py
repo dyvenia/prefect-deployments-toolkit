@@ -110,6 +110,7 @@ def _import_module_from_entrypoint(module_part: str):
         if spec is None or spec.loader is None:
             raise ImportError(f"Could not build an import spec for '{file_path}'.")
         module = importlib.util.module_from_spec(spec)
+        sys.modules[module_name] = module
         spec.loader.exec_module(module)
         return module
 
