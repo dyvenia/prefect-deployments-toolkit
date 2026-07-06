@@ -99,7 +99,6 @@ def get_deployments_from_source(
     for yaml_file in yaml_files:
         try:
             combined_content = base_content + "\n" + file_contents[yaml_file]
-            parsed = yaml.safe_load(combined_content)
             parsed = yaml.load(combined_content, Loader=yaml.CSafeLoader)
 
             if isinstance(parsed, dict) and "deployments" in parsed:
