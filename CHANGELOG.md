@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - parameter_openapi_schema passed during prefect deployment registration via rest api
 - resolve variables functionality added
 - prefect_api merged into prefect_rest
+- logs refinement - avoid duplicated get_flow_ids_for_deployment
 
 [0.0.6]: https://github.com/yourusername/prefect-deployments-toolkit/releases/tag/v0.0.6
 

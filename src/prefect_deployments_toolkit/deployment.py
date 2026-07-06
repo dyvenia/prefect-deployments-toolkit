@@ -89,11 +89,11 @@ def _cleanup_duplicate_deployments(
     deployment_name: str,
     current_flow_id: str,
     current_flow_name: str,
+    flow_ids: list[str],
 ) -> None:
     """Delete every deployment named `deployment_name` under a flow OTHER than
     current_flow_id. Only called when ctx.enforce_unique_deployment_names=True.
     """
-    flow_ids = prefect_rest.get_flow_ids_for_deployment(deployment_name)
     stale_flow_ids = [fid for fid in flow_ids if fid != current_flow_id]
 
     for stale_flow_id in stale_flow_ids:
@@ -235,7 +235,7 @@ def apply_single_deployment(deployment_name: str, ctx: DeploymentContext) -> Non
         # If duplicates existed under other flows and enforcement is on,
         # clean up everything except the deployment matching the current flow.
         if ctx.enforce_unique_deployment_names and flow_name and new_flow_id:
-            _cleanup_duplicate_deployments(ctx, full_name, new_flow_id, flow_name)
+            _cleanup_duplicate_deployments(ctx, full_name, new_flow_id, flow_name, new_flow_ids)
 
         if flow_name:
             _handle_schedules(ctx, merged_file, full_name, flow_name)
