@@ -43,6 +43,7 @@ import importlib
 import importlib.util
 import logging
 import sys
+import threading
 from pathlib import Path
 
 import yaml as _yaml
@@ -53,6 +54,15 @@ logger = logging.getLogger(__name__)
 
 _flow_name_cache: dict[str, str] = {}  # entrypoint -> resolved flow name
 
+# Serializes ALL entrypoint imports process-wide. CPython's per-module import
+# lock can deadlock when multiple threads concurrently import modules that
+# have interdependent sibling imports (e.g. a package whose modules import
+# each other) in different orders. This is not specific to any one package —
+# it can happen with any third-party or first-party module tree. Forcing a
+# single thread through import_module()/exec_module() at a time eliminates
+# the deadlock entirely, at negligible cost since sys.modules caches imports
+# after the first successful call.
+_import_lock = threading.RLock()
 
 def _client():
     return prefect_api.get_client()
@@ -122,7 +132,8 @@ def _resolve_flow_name(entrypoint: str) -> str:
         )
 
     logger.info("Importing entrypoint '%s' to resolve the real flow name...", entrypoint)
-    module = _import_module_from_entrypoint(module_part)
+    with _import_lock:
+        module = _import_module_from_entrypoint(module_part)
 
     flow_obj = getattr(module, function_name, None)
     if flow_obj is None:
