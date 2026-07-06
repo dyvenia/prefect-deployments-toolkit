@@ -51,8 +51,15 @@ def _get_client() -> httpx.Client:
 def _auth_headers() -> dict[str, str]:
     headers = {"Content-Type": "application/json"}
     api_key = os.environ.get("PREFECT_API_KEY")
+    auth_string = os.environ.get("PREFECT_API_AUTH_STRING")
+
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
+    elif auth_string:
+        import base64
+        encoded = base64.b64encode(auth_string.encode()).decode()
+        headers["Authorization"] = f"Basic {encoded}"  
+
     return headers
 
 
