@@ -52,6 +52,7 @@ from . import prefect_api
 
 logger = logging.getLogger(__name__)
 
+_flow_object_cache: dict[str, object] = {} # entrypoint -> resolved Flow object
 _flow_name_cache: dict[str, str] = {}  # entrypoint -> resolved flow name
 
 # Serializes ALL entrypoint imports process-wide. CPython's per-module import
@@ -117,22 +118,22 @@ def _import_module_from_entrypoint(module_part: str):
     return importlib.import_module(module_part)
 
 
-def _resolve_flow_name(entrypoint: str) -> str:
-    """Return the real flow name by importing the entrypoint and reading Flow.name.
+def _resolve_flow_object(entrypoint: str):
+    """Return the actual Flow object by importing the entrypoint.
 
-    entrypoint format: "<module_path_or_file>:<function_name>"
+    entrypoint format: "<module_or_path>:<function_name>"
     """
-    if entrypoint in _flow_name_cache:
-        return _flow_name_cache[entrypoint]
+    if entrypoint in _flow_object_cache:
+        return _flow_object_cache[entrypoint]
 
     module_part, _, function_name = entrypoint.rpartition(":")
     if not module_part or not function_name:
         raise ValueError(
             f"Entrypoint '{entrypoint}' is not in the expected "
-            "'<module_or_file>:<function_name>' format."
+            "'<module_or_path>:<function_name>' format."
         )
 
-    logger.info("Importing entrypoint '%s' to resolve the real flow name...", entrypoint)
+    logger.info("Importing entrypoint '%s' to resolve the flow object...", entrypoint)
     with _import_lock:
         module = _import_module_from_entrypoint(module_part)
 
@@ -142,15 +143,21 @@ def _resolve_flow_name(entrypoint: str) -> str:
             f"Function '{function_name}' not found in module for entrypoint '{entrypoint}'."
         )
 
-    flow_name = getattr(flow_obj, "name", None)
-    if not flow_name:
+    if not hasattr(flow_obj, "name"):
         raise AttributeError(
             f"'{function_name}' in entrypoint '{entrypoint}' does not look like a "
             "Prefect @flow-decorated function (no '.name' attribute found)."
         )
 
+    _flow_object_cache[entrypoint] = flow_obj
+    return flow_obj
+
+
+def _resolve_flow_name(entrypoint: str) -> str:
+    """Return the real flow name by importing the entrypoint and reading Flow.name."""
+    flow_obj = _resolve_flow_object(entrypoint)
+    flow_name = flow_obj.name
     logger.debug("Resolved entrypoint '%s' -> flow name '%s'.", entrypoint, flow_name)
-    _flow_name_cache[entrypoint] = flow_name
     return flow_name
 
 
@@ -223,11 +230,13 @@ def deploy(
     pull_steps = extracted["pull_steps"]
 
     entrypoint = spec["entrypoint"]
-    flow_name = _resolve_flow_name(entrypoint)
+    flow_obj = _resolve_flow_object(entrypoint)
+    flow_name = flow_obj.name
     flow_id = _get_or_create_flow_id_by_name(flow_name)
 
     work_pool_name = spec.get("work_pool", {}).get("name")
     parameters = spec.get("parameters", {})
+    parameter_openapi_schema = flow_obj.parameters.model_dump(mode="json")
     schedules = _build_api_schedules(spec)
 
     payload = {
@@ -236,6 +245,7 @@ def deploy(
         "entrypoint": entrypoint,
         "work_pool_name": work_pool_name,
         "parameters": parameters,
+        "parameter_openapi_schema": parameter_openapi_schema,
         "job_variables": job_variables,
         "tags": tags,
         "pull_steps": pull_steps,
