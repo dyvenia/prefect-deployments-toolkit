@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - work_queue_name added to the payload for rest api
+- description, version, concurrency_limit, concurrency_options added to the payload for rest api
 
 [0.0.7]: https://github.com/yourusername/prefect-deployments-toolkit/releases/tag/v0.0.7
 

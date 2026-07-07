@@ -466,9 +466,15 @@ def deploy(
     work_pool_spec = spec.get("work_pool", {})
     work_pool_name = work_pool_spec.get("name")
     work_queue_name = work_pool_spec.get("work_queue_name")
+
     parameters = _resolve_variables(spec.get("parameters", {}))
     parameter_openapi_schema = flow_obj.parameters.model_dump(mode="json")
     schedules = _build_api_schedules(spec)
+
+    description = spec.get("description")
+    version = spec.get("version")
+    concurrency_limit = spec.get("concurrency_limit")
+    concurrency_options = spec.get("concurrency_options")
 
     payload = {
         "name": deployment_name,
@@ -483,6 +489,10 @@ def deploy(
         "pull_steps": pull_steps,
         "schedules": schedules,
         "enforce_parameter_schema": False,
+        "description": description,
+        "version": version,
+        "concurrency_limit": concurrency_limit,
+        "concurrency_options": concurrency_options,
     }
 
     logger.info(
