@@ -70,17 +70,20 @@ def _get_root_formatter() -> logging.Formatter:
 
 @contextmanager
 def buffered_deployment_log(deployment_name: str) -> Generator[None, None, None]:
+    """Buffer all log output for the current thread and flush it atomically on exit.
+
+    Installs a filter on root handlers so this thread's records are not printed
+    immediately — they are held in the buffer and flushed as a contiguous block
+    once the deployment finishes, under a shared lock that prevents interleaving
+    with other deployments' flushes.
+    """
+    _ensure_skip_filter_installed()
+
     thread_id = threading.get_ident()
     handler = _ThreadLocalBufferHandler(owner_thread_id=thread_id)
     handler.setFormatter(_get_root_formatter())
 
     root_logger = logging.getLogger()
-
-    # Snapshot current handlers and install the skip filter on each
-    root_handlers_snapshot = list(root_logger.handlers)
-    for h in root_handlers_snapshot:
-        h.addFilter(_skip_filter)
-
     root_logger.addHandler(handler)
 
     with _buffered_ids_lock:
@@ -95,6 +98,8 @@ def buffered_deployment_log(deployment_name: str) -> Generator[None, None, None]
         root_logger.removeHandler(handler)
         records = handler.drain()
 
+        # Only flush when we actually captured something; no early return that can
+        # interfere with exception propagation.
         if records:
             with _flush_lock:
                 for root_handler in root_logger.handlers:
