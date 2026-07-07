@@ -26,9 +26,12 @@ def find_deployment_file(deployment_name: str, deployments_dir: Path) -> Path | 
     pattern = rf"^\s*-\s*name:\s*{deployment_name}\s*$"
     result = subprocess.run(
         [
-            "grep", "-r", "--include=*.yaml",
+            "grep",
+            "-r",
+            "--include=*.yaml",
             "--exclude=prefect_base.yaml",
-            "-P", pattern,
+            "-P",
+            pattern,
             str(deployments_dir),
         ],
         capture_output=True,
@@ -112,8 +115,14 @@ def apply_dev_overrides(
             d["name"] = f"{dev_prefix}{deployment_name}"
             d.setdefault("work_pool", {})["name"] = dev_work_pool
             break
-    merged_file.write_text(yaml.dump(content, default_flow_style=False, allow_unicode=True))
-    logger.info("[DEV] Name prefixed with '%s', work pool set to '%s'.", dev_prefix, dev_work_pool)
+    merged_file.write_text(
+        yaml.dump(content, default_flow_style=False, allow_unicode=True)
+    )
+    logger.info(
+        "[DEV] Name prefixed with '%s', work pool set to '%s'.",
+        dev_prefix,
+        dev_work_pool,
+    )
 
 
 def set_git_clone_branch(merged_file: Path, branch: str) -> None:
@@ -123,7 +132,9 @@ def set_git_clone_branch(merged_file: Path, branch: str) -> None:
         git_clone = step.get("prefect.deployments.steps.git_clone")
         if git_clone is not None:
             git_clone["branch"] = branch
-    merged_file.write_text(yaml.dump(content, default_flow_style=False, allow_unicode=True))
+    merged_file.write_text(
+        yaml.dump(content, default_flow_style=False, allow_unicode=True)
+    )
 
 
 def set_schedules_active(merged_file: Path, deployment_name: str, active: bool) -> None:
@@ -134,7 +145,9 @@ def set_schedules_active(merged_file: Path, deployment_name: str, active: bool) 
             for schedule in d.get("schedules", []):
                 schedule["active"] = active
             break
-    merged_file.write_text(yaml.dump(content, default_flow_style=False, allow_unicode=True))
+    merged_file.write_text(
+        yaml.dump(content, default_flow_style=False, allow_unicode=True)
+    )
 
 
 def get_deployment_tags(merged_file: Path, deployment_name: str) -> list[str]:

@@ -1,6 +1,6 @@
 [project]
 name = "prefect-deployments-toolkit"
-version = "0.0.7"
+version = "0.0.8"
 description = "CLI toolkit for detecting and applying Prefect deployment changes in CI/CD pipelines"
 readme = "README.md"
 license = { text = "PolyForm-Noncommercial-1.0.0" }
@@ -25,6 +25,13 @@ dependencies = [
     "prefect>=3.0,<4",
 ]
 
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-mock>=3",
+    "coverage>=7",
+]
+
 [project.urls]
 Repository = "https://github.com/dyvenia/prefect-deployments-toolkit"
 Issues = "https://github.com/dyvenia/prefect-deployments-toolkit/issues"
@@ -38,3 +45,6 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/prefect_deployments_toolkit"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

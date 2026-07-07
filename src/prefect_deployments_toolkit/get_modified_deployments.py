@@ -36,14 +36,18 @@ def get_pr_branch_deployments(deployments_dir: str = "deployments") -> dict[str,
     return get_deployments_from_source("local", "the current branch", deployments_dir)
 
 
-def get_previous_commit_deployments(deployments_dir: str = "deployments") -> dict[str, dict]:
+def get_previous_commit_deployments(
+    deployments_dir: str = "deployments",
+) -> dict[str, dict]:
     """Get all deployments defined in the previous commit (HEAD~1)."""
     result = subprocess.run(
         ["git", "rev-parse", "--verify", "HEAD~1"],
         capture_output=True,
     )
     if result.returncode != 0:
-        logger.warning("HEAD~1 does not exist (possibly initial commit). Returning empty.")
+        logger.warning(
+            "HEAD~1 does not exist (possibly initial commit). Returning empty."
+        )
         return {}
     return get_deployments_from_source("HEAD~1", "the previous commit", deployments_dir)
 
@@ -83,7 +87,8 @@ def main() -> None:
     )
 
     new_or_modified = [
-        name for name, cfg in current.items()
+        name
+        for name, cfg in current.items()
         if name not in previous or cfg != previous[name]
     ]
     removed = [name for name in previous if name not in current]
@@ -93,7 +98,9 @@ def main() -> None:
         sys.exit(0)
 
     all_changed = ",".join(new_or_modified + removed)
-    logger.info("Found the following new, modified, or removed deployments: '%s'.", all_changed)
+    logger.info(
+        "Found the following new, modified, or removed deployments: '%s'.", all_changed
+    )
     logger.info("New or modified: '%s'.", ",".join(new_or_modified))
     logger.info("Removed: '%s'.", ",".join(removed))
     print(all_changed)

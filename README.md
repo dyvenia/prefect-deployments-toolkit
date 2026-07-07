@@ -2,7 +2,7 @@
 
 A lightweight CLI toolkit for managing Prefect deployment lifecycles in CI/CD pipelines. It detects deployments that were added, modified, or removed between two git references, and applies (creates, updates, or deletes) those deployments against Prefect Cloud or a self-hosted Prefect server — via either the Prefect CLI or direct REST API calls.
 
-Built for teams running many Prefect flows out of a monorepo, where each deployment is defined in its own YAML file alongside a shared `prefect_base.yaml`, and CI needs to figure out *which* deployments actually changed before re-registering them.
+Built for teams running many Prefect flows out of a monorepo, where each deployment is defined in its own YAML file alongside a shared `prefect_base.yaml`, and CI needs to figure out _which_ deployments actually changed before re-registering them.
 
 ## Features
 
@@ -35,6 +35,7 @@ python -m prefect_deployments_toolkit.get_modified_deployments \
 Prints a comma-separated list of changed deployment names to stdout, and (if running inside GitHub Actions) writes `DEPLOYMENT_NAMES`, `NEW_OR_MODIFIED_DEPLOYMENT_NAMES`, and `REMOVED_DEPLOYMENT_NAMES` to `GITHUB_ENV`.
 
 `--modified-by` accepts:
+
 - `pull_request` — compares your local working tree against the fetched base branch (use during an open MR/PR).
 - `push` or `pull_request_target` — compares `HEAD~1` against `HEAD` (use after a merge to a protected branch).
 
@@ -64,22 +65,21 @@ deployments/
 └── ...
 ```
 
-
 Each deployment YAML file must declare a `deployments:` list with at least a `name` and `entrypoint` key, following the standard Prefect deployment YAML schema.
 
 ## Backends
 
-| Backend | How it works | When to use |
-|---|---|---|
-| `cli` | Shells out to `prefect deploy` | Simplest, matches local `prefect deploy` behavior exactly |
-| `rest` | Talks directly to the Prefect Cloud REST API | Faster for many concurrent deployments, avoids CLI subprocess overhead |
+| Backend | How it works                                 | When to use                                                            |
+| ------- | -------------------------------------------- | ---------------------------------------------------------------------- |
+| `cli`   | Shells out to `prefect deploy`               | Simplest, matches local `prefect deploy` behavior exactly              |
+| `rest`  | Talks directly to the Prefect Cloud REST API | Faster for many concurrent deployments, avoids CLI subprocess overhead |
 
 ## Environment Variables
 
-| Variable | Required | Purpose |
-|---|---|---|
-| `PREFECT_API_URL` | Yes | Full Prefect Cloud/server API base URL |
-| `PREFECT_API_KEY` | Yes | API key for authentication |
+| Variable          | Required | Purpose                                |
+| ----------------- | -------- | -------------------------------------- |
+| `PREFECT_API_URL` | Yes      | Full Prefect Cloud/server API base URL |
+| `PREFECT_API_KEY` | Yes      | API key for authentication             |
 
 ## License
 
