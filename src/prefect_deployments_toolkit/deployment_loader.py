@@ -115,26 +115,35 @@ def get_deployments_from_source(
                 if not isinstance(d, dict):
                     logger.error(
                         "Invalid deployment entry in %s: expected dict, got %s: %s",
-                        yaml_file, type(d).__name__, d,
+                        yaml_file,
+                        type(d).__name__,
+                        d,
                     )
                     sys.exit(1)
                 name = d.get("name")
                 if not isinstance(name, str) or not name:
                     logger.error(
                         "Deployment in %s is missing a valid 'name' field: %s",
-                        yaml_file, d,
+                        yaml_file,
+                        d,
                     )
                     sys.exit(1)
                 deployments[name] = normalize_deployment(d)
 
-            logger.debug("Loaded %d deployments from %s", len(deployment_list), yaml_file)
+            logger.debug(
+                "Loaded %d deployments from %s", len(deployment_list), yaml_file
+            )
 
         except yaml.YAMLError as exc:
             logger.error("Invalid YAML syntax in %s: %s", yaml_file, exc)
             sys.exit(1)
         except KeyError:
-            logger.warning("Failed to load deployments from %s: content missing", yaml_file)
+            logger.warning(
+                "Failed to load deployments from %s: content missing", yaml_file
+            )
             continue
 
-    logger.debug("Deployments in %s:\n%s", source_name, json.dumps(deployments, indent=2))
+    logger.debug(
+        "Deployments in %s:\n%s", source_name, json.dumps(deployments, indent=2)
+    )
     return deployments

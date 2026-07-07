@@ -50,9 +50,11 @@ def write_tmp(tmp_path: Path, name: str, content: str) -> Path:
 # build_merged_prefect_file
 # ---------------------------------------------------------------------------
 
+
 class TestBuildMergedPrefectFile:
     def test_concatenates_base_and_deployment(self, tmp_path):
         from prefect_deployments_toolkit.yaml_utils import build_merged_prefect_file
+
         base = write_tmp(tmp_path, "base.yaml", BASE_YAML)
         dep = write_tmp(tmp_path, "dep.yaml", DEPLOYMENT_YAML)
         dest = tmp_path / "merged.yaml"
@@ -63,6 +65,7 @@ class TestBuildMergedPrefectFile:
 
     def test_dest_contains_both_sections(self, tmp_path):
         from prefect_deployments_toolkit.yaml_utils import build_merged_prefect_file
+
         base = write_tmp(tmp_path, "base.yaml", BASE_YAML)
         dep = write_tmp(tmp_path, "dep.yaml", DEPLOYMENT_YAML)
         dest = tmp_path / "merged.yaml"
@@ -76,9 +79,11 @@ class TestBuildMergedPrefectFile:
 # load_deployment_config
 # ---------------------------------------------------------------------------
 
+
 class TestLoadDeploymentConfig:
     def test_returns_correct_deployment(self, tmp_path):
         from prefect_deployments_toolkit.yaml_utils import load_deployment_config
+
         merged = write_tmp(tmp_path, "merged.yaml", MERGED_YAML)
         config = load_deployment_config(merged, "my-flow")
         assert config["name"] == "my-flow"
@@ -86,6 +91,7 @@ class TestLoadDeploymentConfig:
 
     def test_raises_on_missing_deployment(self, tmp_path):
         from prefect_deployments_toolkit.yaml_utils import load_deployment_config
+
         merged = write_tmp(tmp_path, "merged.yaml", MERGED_YAML)
         with pytest.raises(KeyError, match="nonexistent"):
             load_deployment_config(merged, "nonexistent")
@@ -95,15 +101,18 @@ class TestLoadDeploymentConfig:
 # validate_schedule
 # ---------------------------------------------------------------------------
 
+
 class TestValidateSchedule:
     def test_valid_cron_schedule_passes(self, tmp_path):
         from prefect_deployments_toolkit.yaml_utils import validate_schedule
+
         merged = write_tmp(tmp_path, "merged.yaml", MERGED_YAML)
         # Should not raise
         validate_schedule(merged, "my-flow")
 
     def test_singular_schedule_key_raises(self, tmp_path):
         from prefect_deployments_toolkit.yaml_utils import validate_schedule
+
         content = BASE_YAML + textwrap.dedent("""\
             deployments:
               - name: bad-schedule
@@ -117,6 +126,7 @@ class TestValidateSchedule:
 
     def test_empty_schedules_list_raises(self, tmp_path):
         from prefect_deployments_toolkit.yaml_utils import validate_schedule
+
         content = BASE_YAML + textwrap.dedent("""\
             deployments:
               - name: empty-sched
@@ -129,6 +139,7 @@ class TestValidateSchedule:
 
     def test_schedule_missing_cron_raises(self, tmp_path):
         from prefect_deployments_toolkit.yaml_utils import validate_schedule
+
         content = BASE_YAML + textwrap.dedent("""\
             deployments:
               - name: no-cron
@@ -142,6 +153,7 @@ class TestValidateSchedule:
 
     def test_no_schedules_key_is_valid(self, tmp_path):
         from prefect_deployments_toolkit.yaml_utils import validate_schedule
+
         content = BASE_YAML + textwrap.dedent("""\
             deployments:
               - name: no-sched
@@ -156,9 +168,11 @@ class TestValidateSchedule:
 # apply_dev_overrides
 # ---------------------------------------------------------------------------
 
+
 class TestApplyDevOverrides:
     def test_prefixes_deployment_name(self, tmp_path):
         from prefect_deployments_toolkit.yaml_utils import apply_dev_overrides
+
         merged = write_tmp(tmp_path, "merged.yaml", MERGED_YAML)
         apply_dev_overrides(merged, "my-flow", "dev--", "dev-pool")
         parsed = yaml.safe_load(merged.read_text())
@@ -168,6 +182,7 @@ class TestApplyDevOverrides:
 
     def test_sets_dev_work_pool(self, tmp_path):
         from prefect_deployments_toolkit.yaml_utils import apply_dev_overrides
+
         merged = write_tmp(tmp_path, "merged.yaml", MERGED_YAML)
         apply_dev_overrides(merged, "my-flow", "dev--", "my-dev-pool")
         parsed = yaml.safe_load(merged.read_text())
@@ -176,8 +191,8 @@ class TestApplyDevOverrides:
 
     def test_unknown_deployment_name_is_noop(self, tmp_path):
         from prefect_deployments_toolkit.yaml_utils import apply_dev_overrides
+
         merged = write_tmp(tmp_path, "merged.yaml", MERGED_YAML)
-        original = merged.read_text()
         apply_dev_overrides(merged, "unknown-dep", "dev--", "dev-pool")
         # File is rewritten but deployment names should be unchanged
         parsed = yaml.safe_load(merged.read_text())
@@ -189,9 +204,11 @@ class TestApplyDevOverrides:
 # set_git_clone_branch
 # ---------------------------------------------------------------------------
 
+
 class TestSetGitCloneBranch:
     def test_sets_branch_in_pull_step(self, tmp_path):
         from prefect_deployments_toolkit.yaml_utils import set_git_clone_branch
+
         merged = write_tmp(tmp_path, "merged.yaml", MERGED_YAML)
         set_git_clone_branch(merged, "feature-xyz")
         parsed = yaml.safe_load(merged.read_text())
@@ -204,6 +221,7 @@ class TestSetGitCloneBranch:
 
     def test_no_pull_steps_does_not_crash(self, tmp_path):
         from prefect_deployments_toolkit.yaml_utils import set_git_clone_branch
+
         content = DEPLOYMENT_YAML  # no pull section
         merged = write_tmp(tmp_path, "merged.yaml", content)
         set_git_clone_branch(merged, "some-branch")
@@ -214,9 +232,11 @@ class TestSetGitCloneBranch:
 # set_schedules_active
 # ---------------------------------------------------------------------------
 
+
 class TestSetSchedulesActive:
     def test_sets_all_schedules_active_true(self, tmp_path):
         from prefect_deployments_toolkit.yaml_utils import set_schedules_active
+
         merged = write_tmp(tmp_path, "merged.yaml", MERGED_YAML)
         set_schedules_active(merged, "my-flow", active=True)
         parsed = yaml.safe_load(merged.read_text())
@@ -225,6 +245,7 @@ class TestSetSchedulesActive:
 
     def test_sets_all_schedules_active_false(self, tmp_path):
         from prefect_deployments_toolkit.yaml_utils import set_schedules_active
+
         content = BASE_YAML + textwrap.dedent("""\
             deployments:
               - name: multi-sched
@@ -246,9 +267,11 @@ class TestSetSchedulesActive:
 # get_deployment_tags
 # ---------------------------------------------------------------------------
 
+
 class TestGetDeploymentTags:
     def test_returns_tags_list(self, tmp_path):
         from prefect_deployments_toolkit.yaml_utils import get_deployment_tags
+
         merged = write_tmp(tmp_path, "merged.yaml", MERGED_YAML)
         tags = get_deployment_tags(merged, "my-flow")
         assert "etl" in tags
@@ -256,6 +279,7 @@ class TestGetDeploymentTags:
 
     def test_returns_empty_list_when_no_tags(self, tmp_path):
         from prefect_deployments_toolkit.yaml_utils import get_deployment_tags
+
         content = BASE_YAML + textwrap.dedent("""\
             deployments:
               - name: no-tags
@@ -270,9 +294,11 @@ class TestGetDeploymentTags:
 # get_job_variables
 # ---------------------------------------------------------------------------
 
+
 class TestGetJobVariables:
     def test_returns_job_variables(self, tmp_path):
         from prefect_deployments_toolkit.yaml_utils import get_job_variables
+
         merged = write_tmp(tmp_path, "merged.yaml", MERGED_YAML)
         jv = get_job_variables(merged, "my-flow")
         assert jv["image"] == "myrepo/myimage:latest"
@@ -280,6 +306,7 @@ class TestGetJobVariables:
 
     def test_returns_empty_dict_when_no_job_variables(self, tmp_path):
         from prefect_deployments_toolkit.yaml_utils import get_job_variables
+
         content = BASE_YAML + textwrap.dedent("""\
             deployments:
               - name: no-jv
@@ -296,14 +323,17 @@ class TestGetJobVariables:
 # has_schedules
 # ---------------------------------------------------------------------------
 
+
 class TestHasSchedules:
     def test_true_when_schedules_present(self, tmp_path):
         from prefect_deployments_toolkit.yaml_utils import has_schedules
+
         merged = write_tmp(tmp_path, "merged.yaml", MERGED_YAML)
         assert has_schedules(merged, "my-flow") is True
 
     def test_false_when_no_schedules_key(self, tmp_path):
         from prefect_deployments_toolkit.yaml_utils import has_schedules
+
         content = BASE_YAML + textwrap.dedent("""\
             deployments:
               - name: no-sched
@@ -314,6 +344,7 @@ class TestHasSchedules:
 
     def test_false_when_schedules_is_null(self, tmp_path):
         from prefect_deployments_toolkit.yaml_utils import has_schedules
+
         content = BASE_YAML + textwrap.dedent("""\
             deployments:
               - name: null-sched
@@ -328,6 +359,7 @@ class TestHasSchedules:
 # find_deployment_file  (subprocess.run is mocked)
 # ---------------------------------------------------------------------------
 
+
 class TestFindDeploymentFile:
     """find_deployment_file shells out to grep — mock subprocess.run."""
 
@@ -338,27 +370,35 @@ class TestFindDeploymentFile:
 
     def test_returns_path_for_single_match(self, tmp_path):
         from prefect_deployments_toolkit import yaml_utils
+
         file_path = tmp_path / "dep.yaml"
         file_path.touch()
         grep_out = f"{file_path}:  - name: my-flow\n"
-        with patch.object(yaml_utils.subprocess, "run", return_value=self._mock_grep(grep_out)):
+        with patch.object(
+            yaml_utils.subprocess, "run", return_value=self._mock_grep(grep_out)
+        ):
             result = yaml_utils.find_deployment_file("my-flow", tmp_path)
         assert result == file_path
 
     def test_returns_none_when_no_match(self, tmp_path):
         from prefect_deployments_toolkit import yaml_utils
-        with patch.object(yaml_utils.subprocess, "run", return_value=self._mock_grep("")):
+
+        with patch.object(
+            yaml_utils.subprocess, "run", return_value=self._mock_grep("")
+        ):
             result = yaml_utils.find_deployment_file("ghost", tmp_path)
         assert result is None
 
     def test_raises_on_multiple_file_matches(self, tmp_path):
         from prefect_deployments_toolkit import yaml_utils
+
         f1 = tmp_path / "a.yaml"
         f2 = tmp_path / "b.yaml"
         f1.touch()
         f2.touch()
         grep_out = f"{f1}:  - name: dup\n{f2}:  - name: dup\n"
-        with patch.object(yaml_utils.subprocess, "run", return_value=self._mock_grep(grep_out)):
+        with patch.object(
+            yaml_utils.subprocess, "run", return_value=self._mock_grep(grep_out)
+        ):
             with pytest.raises(ValueError, match="multiple files"):
                 yaml_utils.find_deployment_file("dup", tmp_path)
-

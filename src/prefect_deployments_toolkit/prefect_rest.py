@@ -150,7 +150,11 @@ def request(method: str, url: str, **kwargs) -> httpx.Response:
                 raise
             logger.warning(
                 "Network error on %s %s (attempt %d/%d): %s — retrying...",
-                method, url, attempt + 1, MAX_RETRIES, exc,
+                method,
+                url,
+                attempt + 1,
+                MAX_RETRIES,
+                exc,
             )
             _sleep_with_backoff(attempt)
             continue
@@ -160,7 +164,11 @@ def request(method: str, url: str, **kwargs) -> httpx.Response:
                 return response
             logger.warning(
                 "Received %d from %s %s (attempt %d/%d) — retrying...",
-                response.status_code, method, url, attempt + 1, MAX_RETRIES,
+                response.status_code,
+                method,
+                url,
+                attempt + 1,
+                MAX_RETRIES,
             )
             _sleep_with_backoff(attempt, response)
             continue
@@ -198,11 +206,13 @@ def ui_deployment_url(deployment_id: str) -> str:
 
 # --- Generic Prefect entity lookups ---------------------------------------
 
+
 def get_flow_ids_for_deployment(deployment_name: str) -> list[str]:
     """Return all flow_ids matching a deployment name."""
     logger.info("Retrieving flow IDs for deployment '%s'...", deployment_name)
     response = request(
-        "POST", _url("/deployments/filter"),
+        "POST",
+        _url("/deployments/filter"),
         headers=_auth_headers(),
         json={"deployments": {"name": {"any_": [deployment_name]}}},
     )
@@ -235,7 +245,8 @@ def get_flow_id_by_name(flow_name: str) -> str | None:
 def get_deployment_id_by_name(deployment_name: str) -> str | None:
     """Return the deployment's own id for a bare deployment name, or None."""
     response = request(
-        "POST", _url("/deployments/filter"),
+        "POST",
+        _url("/deployments/filter"),
         headers=_auth_headers(),
         json={"deployments": {"name": {"any_": [deployment_name]}}},
     )
@@ -247,7 +258,8 @@ def get_deployment_id_by_name(deployment_name: str) -> str | None:
 def get_deployment_by_name(deployment_name: str) -> dict | None:
     """Return the full deployment record by bare deployment name, or None."""
     response = request(
-        "POST", _url("/deployments/filter"),
+        "POST",
+        _url("/deployments/filter"),
         headers=_auth_headers(),
         json={"deployments": {"name": {"any_": [deployment_name]}}},
     )
@@ -263,7 +275,9 @@ def get_schedule_ids(full_deployment_name: str) -> list[str]:
     if deployment_id is None:
         return []
     response = request(
-        "GET", _url(f"/deployments/{deployment_id}/schedules"), headers=_auth_headers(),
+        "GET",
+        _url(f"/deployments/{deployment_id}/schedules"),
+        headers=_auth_headers(),
     )
     response.raise_for_status()
     return [s["id"] for s in response.json()]
@@ -271,7 +285,9 @@ def get_schedule_ids(full_deployment_name: str) -> list[str]:
 
 def get_variable(variable_name: str) -> object | None:
     """Return a Prefect Variable's value by name, or None if it doesn't exist."""
-    response = request("GET", _url(f"/variables/name/{variable_name}"), headers=_auth_headers())
+    response = request(
+        "GET", _url(f"/variables/name/{variable_name}"), headers=_auth_headers()
+    )
     if response.status_code == 404:
         return None
     response.raise_for_status()
@@ -284,14 +300,18 @@ def _get_or_create_flow_id_by_name(flow_name: str) -> str:
     if flow_id is not None:
         return flow_id
     logger.info("Flow '%s' not found — creating it...", flow_name)
-    response = request("POST", _url("/flows/"), headers=_auth_headers(), json={"name": flow_name})
+    response = request(
+        "POST", _url("/flows/"), headers=_auth_headers(), json={"name": flow_name}
+    )
     response.raise_for_status()
     return response.json()["id"]
 
 
 def _get_deployment_id_by_full_name(full_name: str) -> str | None:
     """Return the deployment_id for 'flow_name/deployment_name', or None."""
-    response = request("GET", _url(f"/deployments/name/{full_name}"), headers=_auth_headers())
+    response = request(
+        "GET", _url(f"/deployments/name/{full_name}"), headers=_auth_headers()
+    )
     if response.status_code == 404:
         return None
     response.raise_for_status()
@@ -376,6 +396,7 @@ def _resolve_flow_name(entrypoint: str) -> str:
 
 # --- YAML spec extraction ---------------------------------------------------
 
+
 def _find_deployment_spec(prefect_file: Path, deployment_name: str) -> dict:
     """Extract the matching deployment dict (and top-level pull steps)."""
     parsed = _yaml.safe_load(prefect_file.read_text())
@@ -397,10 +418,12 @@ def _build_api_schedules(spec: dict) -> list[dict]:
             "timezone": sched.get("timezone", "UTC"),
             "day_or": sched.get("day_or", True),
         }
-        api_schedules.append({
-            "schedule": cron_schedule,
-            "active": bool(sched.get("active", False)),
-        })
+        api_schedules.append(
+            {
+                "schedule": cron_schedule,
+                "active": bool(sched.get("active", False)),
+            }
+        )
     return api_schedules
 
 
@@ -446,6 +469,7 @@ def _resolve_variables(value):
 
 
 # --- Public deploy-lifecycle API (mirrors prefect_cli.py) -------------------
+
 
 def deploy(
     deployment_name: str,
@@ -497,9 +521,13 @@ def deploy(
 
     logger.info(
         "Deploying '%s' (flow_name=%s, flow_id=%s) via REST API...",
-        deployment_name, flow_name, flow_id,
+        deployment_name,
+        flow_name,
+        flow_id,
     )
-    response = request("POST", _url("/deployments/"), headers=_auth_headers(), json=payload)
+    response = request(
+        "POST", _url("/deployments/"), headers=_auth_headers(), json=payload
+    )
     response.raise_for_status()
     deployment_id = response.json()["id"]
 
@@ -514,33 +542,46 @@ def delete_deployment(full_name: str) -> None:
     if deployment_id is None:
         logger.info("Deployment '%s' does not exist — nothing to delete.", full_name)
         return
-    response = request("DELETE", _url(f"/deployments/{deployment_id}"), headers=_auth_headers())
+    response = request(
+        "DELETE", _url(f"/deployments/{deployment_id}"), headers=_auth_headers()
+    )
     response.raise_for_status()
 
 
 def resume_schedule(full_deployment_name: str, schedule_id: str) -> None:
     """Resume (activate) a schedule by ID."""
-    logger.info("Resuming schedule %s for '%s' (REST)...", schedule_id, full_deployment_name)
+    logger.info(
+        "Resuming schedule %s for '%s' (REST)...", schedule_id, full_deployment_name
+    )
     deployment_id = _get_deployment_id_by_full_name(full_deployment_name)
     if deployment_id is None:
-        logger.warning("Deployment '%s' not found — cannot resume schedule.", full_deployment_name)
+        logger.warning(
+            "Deployment '%s' not found — cannot resume schedule.", full_deployment_name
+        )
         return
     response = request(
-        "PATCH", _url(f"/deployments/{deployment_id}/schedules/{schedule_id}"),
-        headers=_auth_headers(), json={"active": True},
+        "PATCH",
+        _url(f"/deployments/{deployment_id}/schedules/{schedule_id}"),
+        headers=_auth_headers(),
+        json={"active": True},
     )
     response.raise_for_status()
 
 
 def delete_schedule(full_deployment_name: str, schedule_id: str) -> None:
     """Delete a schedule by ID."""
-    logger.info("Deleting schedule %s from '%s' (REST)...", schedule_id, full_deployment_name)
+    logger.info(
+        "Deleting schedule %s from '%s' (REST)...", schedule_id, full_deployment_name
+    )
     deployment_id = _get_deployment_id_by_full_name(full_deployment_name)
     if deployment_id is None:
-        logger.warning("Deployment '%s' not found — cannot delete schedule.", full_deployment_name)
+        logger.warning(
+            "Deployment '%s' not found — cannot delete schedule.", full_deployment_name
+        )
         return
     response = request(
-        "DELETE", _url(f"/deployments/{deployment_id}/schedules/{schedule_id}"),
+        "DELETE",
+        _url(f"/deployments/{deployment_id}/schedules/{schedule_id}"),
         headers=_auth_headers(),
     )
     response.raise_for_status()

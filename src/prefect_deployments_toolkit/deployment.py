@@ -42,7 +42,9 @@ class DeploymentContext:
         return prefect_rest if self.backend == "rest" else prefect_cli
 
 
-def _resolve_flow_name(deployment_name: str, ctx: DeploymentContext) -> tuple[str, str | None]:
+def _resolve_flow_name(
+    deployment_name: str, ctx: DeploymentContext
+) -> tuple[str, str | None]:
     """Return (flow_id, flow_name) for a deployment.
 
     If more than one flow currently has a deployment with this name:
@@ -65,7 +67,9 @@ def _resolve_flow_name(deployment_name: str, ctx: DeploymentContext) -> tuple[st
     logger.warning(
         "Deployment name '%s' is currently used by %d different flows: %s. "
         "Deployment names should be globally unique.",
-        deployment_name, len(flow_ids), flow_names,
+        deployment_name,
+        len(flow_ids),
+        flow_names,
     )
 
     if not ctx.enforce_unique_deployment_names:
@@ -101,8 +105,11 @@ def _cleanup_duplicate_deployments(
         logger.warning(
             "Deleting duplicate deployment '%s' under flow '%s' (flow_id=%s) — "
             "keeping the one under current flow '%s' (flow_id=%s).",
-            deployment_name, stale_flow_name, stale_flow_id,
-            current_flow_name, current_flow_id,
+            deployment_name,
+            stale_flow_name,
+            stale_flow_id,
+            current_flow_name,
+            current_flow_id,
         )
         ctx.client.delete_deployment(f"{stale_flow_name}/{deployment_name}")
 
@@ -148,7 +155,9 @@ def _handle_schedules(
     deployment_has_schedules = yaml_utils.has_schedules(merged_file, full_name)
 
     if not deployment_has_schedules:
-        logger.info("No schedules in YAML — removing any existing schedules from Prefect Cloud...")
+        logger.info(
+            "No schedules in YAML — removing any existing schedules from Prefect Cloud..."
+        )
         schedule_ids = prefect_rest.get_schedule_ids(f"{flow_name}/{full_name}")
         for sid in schedule_ids:
             ctx.client.delete_schedule(f"{flow_name}/{full_name}", sid)
@@ -162,10 +171,14 @@ def _handle_schedules(
         for sid in schedule_ids:
             ctx.client.resume_schedule(f"{flow_name}/{full_name}", sid)
     else:
-        logger.info("Schedules exist in YAML but enable_schedule=false — will remain paused.")
+        logger.info(
+            "Schedules exist in YAML but enable_schedule=false — will remain paused."
+        )
 
 
-def remove_deployment(ctx: DeploymentContext, deployment_name: str, full_name: str, flow_name: str | None) -> None:
+def remove_deployment(
+    ctx: DeploymentContext, deployment_name: str, full_name: str, flow_name: str | None
+) -> None:
     """Delete a deployment that no longer exists in the YAML files."""
     logger.info("Deployment '%s' has been removed from YAML.", deployment_name)
     if flow_name:
@@ -224,23 +237,31 @@ def apply_single_deployment(deployment_name: str, ctx: DeploymentContext) -> Non
         new_flow_ids = prefect_rest.get_flow_ids_for_deployment(full_name)
         new_flow_id = new_flow_ids[0] if new_flow_ids else ""
         if flow_id and new_flow_id and new_flow_id != flow_id:
-            logger.info("Flow changed post-deploy — removing stale deployment under old flow.")
+            logger.info(
+                "Flow changed post-deploy — removing stale deployment under old flow."
+            )
             ctx.client.delete_deployment(f"{flow_name}/{full_name}")
             flow_name = prefect_rest.get_flow_name(new_flow_id)
 
         if not flow_name and new_flow_id:
-            logger.info("New deployment — retrieving flow name from Prefect Cloud post-deploy...")
+            logger.info(
+                "New deployment — retrieving flow name from Prefect Cloud post-deploy..."
+            )
             flow_name = prefect_rest.get_flow_name(new_flow_id) if new_flow_id else None
 
         # If duplicates existed under other flows and enforcement is on,
         # clean up everything except the deployment matching the current flow.
         if ctx.enforce_unique_deployment_names and flow_name and new_flow_id:
-            _cleanup_duplicate_deployments(ctx, full_name, new_flow_id, flow_name, new_flow_ids)
+            _cleanup_duplicate_deployments(
+                ctx, full_name, new_flow_id, flow_name, new_flow_ids
+            )
 
         if flow_name:
             _handle_schedules(ctx, merged_file, full_name, flow_name)
         else:
-            logger.warning("Could not resolve flow name post-deploy — skipping schedule management.")
+            logger.warning(
+                "Could not resolve flow name post-deploy — skipping schedule management."
+            )
 
     finally:
         merged_file.unlink(missing_ok=True)

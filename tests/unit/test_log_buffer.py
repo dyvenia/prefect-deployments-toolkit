@@ -2,13 +2,13 @@
 
 import logging
 import threading
-from unittest.mock import MagicMock, patch
 
 import pytest
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_record(msg: str = "hello", level: int = logging.INFO) -> logging.LogRecord:
     record = logging.LogRecord(
@@ -29,12 +29,14 @@ def _make_record(msg: str = "hello", level: int = logging.INFO) -> logging.LogRe
 # _SkipBufferedThreadsFilter
 # ---------------------------------------------------------------------------
 
+
 class TestSkipBufferedThreadsFilter:
     """Tests for the filter that suppresses records from buffered threads."""
 
     def setup_method(self):
         # Import fresh so module-level state is shared (singleton sets)
         from prefect_deployments_toolkit import log_buffer as lb
+
         self.lb = lb
         # Start with a clean buffered set for isolation
         lb._buffered_thread_ids.clear()
@@ -59,11 +61,13 @@ class TestSkipBufferedThreadsFilter:
 # _ThreadLocalBufferHandler
 # ---------------------------------------------------------------------------
 
+
 class TestThreadLocalBufferHandler:
     """Tests for the per-thread log capture handler."""
 
     def setup_method(self):
         from prefect_deployments_toolkit import log_buffer as lb
+
         self.lb = lb
 
     def test_emit_captures_own_thread_record(self):
@@ -101,11 +105,13 @@ class TestThreadLocalBufferHandler:
 # _get_root_formatter
 # ---------------------------------------------------------------------------
 
+
 class TestGetRootFormatter:
     """Tests for the formatter extraction helper."""
 
     def setup_method(self):
         from prefect_deployments_toolkit import log_buffer as lb
+
         self.lb = lb
 
     def test_returns_default_formatter_when_no_handlers(self):
@@ -136,11 +142,13 @@ class TestGetRootFormatter:
 # buffered_deployment_log (context manager)
 # ---------------------------------------------------------------------------
 
+
 class TestBufferedDeploymentLog:
     """Integration-style tests for the public context manager."""
 
     def setup_method(self):
         from prefect_deployments_toolkit import log_buffer as lb
+
         self.lb = lb
         # Reset module-level state so tests don't interfere with each other
         lb._buffered_thread_ids.clear()
@@ -236,4 +244,3 @@ class TestBufferedDeploymentLog:
         # Each deployment's own message should appear exactly once
         assert results["a"].count("msg from a") == 1
         assert results["b"].count("msg from b") == 1
-

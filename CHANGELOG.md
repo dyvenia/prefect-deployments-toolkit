@@ -75,4 +75,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - YAML schedule validation (rejects singular `schedule` key, empty `schedules`, and entries missing `cron`).
 
 [0.0.1]: https://github.com/yourusername/prefect-deployments-toolkit/releases/tag/v0.0.1
-

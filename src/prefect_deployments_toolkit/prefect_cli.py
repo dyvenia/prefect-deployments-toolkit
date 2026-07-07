@@ -1,9 +1,7 @@
 """Thin wrappers around the Prefect CLI for deploy/delete/schedule operations."""
 
-import asyncio
 import logging
 import subprocess
-import threading
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -21,6 +19,7 @@ def _run(cmd: list[str], check: bool = True) -> subprocess.CompletedProcess:
     if check and result.returncode != 0:
         raise subprocess.CalledProcessError(result.returncode, cmd)
     return result
+
 
 def deploy(
     deployment_name: str,
@@ -47,10 +46,29 @@ def delete_deployment(full_name: str) -> None:
 def resume_schedule(full_deployment_name: str, schedule_id: str) -> None:
     """Resume a schedule by ID."""
     logger.info("Resuming schedule %s for '%s'...", schedule_id, full_deployment_name)
-    _run(["prefect", "deployment", "schedule", "resume", full_deployment_name, schedule_id])
+    _run(
+        [
+            "prefect",
+            "deployment",
+            "schedule",
+            "resume",
+            full_deployment_name,
+            schedule_id,
+        ]
+    )
 
 
 def delete_schedule(full_deployment_name: str, schedule_id: str) -> None:
     """Delete a schedule by ID."""
     logger.info("Deleting schedule %s from '%s'...", schedule_id, full_deployment_name)
-    _run(["prefect", "deployment", "schedule", "delete", "-y", full_deployment_name, schedule_id])
+    _run(
+        [
+            "prefect",
+            "deployment",
+            "schedule",
+            "delete",
+            "-y",
+            full_deployment_name,
+            schedule_id,
+        ]
+    )

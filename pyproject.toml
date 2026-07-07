@@ -47,4 +47,3 @@ packages = ["src/prefect_deployments_toolkit"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-

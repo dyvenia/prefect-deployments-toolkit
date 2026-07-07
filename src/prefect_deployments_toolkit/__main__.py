@@ -30,36 +30,67 @@ MAX_WORKERS = 8
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Apply Prefect deployments.")
-    parser.add_argument("--deployment-names", required=True,
-                         help="Comma-separated list of deployment names.")
-    parser.add_argument("--enable-schedule", required=True,
-                         choices=["true", "false"],
-                         help="Whether to enable schedules after deploy.")
-    parser.add_argument("--tag", required=True,
-                         help="Image/environment tag (e.g. 'dev', 'v1.2.3').")
-    parser.add_argument("--reference", required=True,
-                         help="Git branch or tag reference (e.g. 'main', 'feature_branch1').")
-    parser.add_argument("--repo-name", required=True,
-                         help="Repository name used in job variable paths.")
-    parser.add_argument("--custom-image", default="",
-                         help="Full custom image reference, or empty string to use pool default.")
-    parser.add_argument("--deployments-dir", default="deployments",
-                         help="Path to the deployments directory.")
-    parser.add_argument("--dev-work-pool", default="",
-                         help="Dev work pool name. When set with --tag=dev, activates dev overrides.")
-    parser.add_argument("--max-workers", type=int, default=MAX_WORKERS,
-                         help=f"Max concurrent deployments (default: {MAX_WORKERS}).")
-    parser.add_argument("--backend", default="cli", choices=["cli", "rest"],
-                         help="Deployment backend: 'cli' (prefect CLI, default) or "
-                              "'rest' (direct Prefect Cloud REST API calls).")
-    parser.add_argument("--enforce-unique-deployment-names", default="false",
-                        choices=["true", "false"],
-                        help=(
-                            "If false (default), only WARN in logs when a deployment name is used by"
-                            "more than one flow — nothing is deleted. If true, delete every duplicate"
-                            "deployment record except the one matching the flow currently resolved from"
-                            "its entrypoint, enforcing globally unique deployment names."
-                        ))
+    parser.add_argument(
+        "--deployment-names",
+        required=True,
+        help="Comma-separated list of deployment names.",
+    )
+    parser.add_argument(
+        "--enable-schedule",
+        required=True,
+        choices=["true", "false"],
+        help="Whether to enable schedules after deploy.",
+    )
+    parser.add_argument(
+        "--tag", required=True, help="Image/environment tag (e.g. 'dev', 'v1.2.3')."
+    )
+    parser.add_argument(
+        "--reference",
+        required=True,
+        help="Git branch or tag reference (e.g. 'main', 'feature_branch1').",
+    )
+    parser.add_argument(
+        "--repo-name", required=True, help="Repository name used in job variable paths."
+    )
+    parser.add_argument(
+        "--custom-image",
+        default="",
+        help="Full custom image reference, or empty string to use pool default.",
+    )
+    parser.add_argument(
+        "--deployments-dir",
+        default="deployments",
+        help="Path to the deployments directory.",
+    )
+    parser.add_argument(
+        "--dev-work-pool",
+        default="",
+        help="Dev work pool name. When set with --tag=dev, activates dev overrides.",
+    )
+    parser.add_argument(
+        "--max-workers",
+        type=int,
+        default=MAX_WORKERS,
+        help=f"Max concurrent deployments (default: {MAX_WORKERS}).",
+    )
+    parser.add_argument(
+        "--backend",
+        default="cli",
+        choices=["cli", "rest"],
+        help="Deployment backend: 'cli' (prefect CLI, default) or "
+        "'rest' (direct Prefect Cloud REST API calls).",
+    )
+    parser.add_argument(
+        "--enforce-unique-deployment-names",
+        default="false",
+        choices=["true", "false"],
+        help=(
+            "If false (default), only WARN in logs when a deployment name is used by"
+            "more than one flow — nothing is deleted. If true, delete every duplicate"
+            "deployment record except the one matching the flow currently resolved from"
+            "its entrypoint, enforcing globally unique deployment names."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -75,13 +106,17 @@ def _apply_deployment(
     """
     separator = "#" * 50
     with buffered_deployment_log(deployment_name):
-        logger.info("%s [%d/%d] %s %s", separator, index, total, deployment_name, separator)
+        logger.info(
+            "%s [%d/%d] %s %s", separator, index, total, deployment_name, separator
+        )
         try:
             apply_single_deployment(deployment_name, ctx)
             logger.info(">>> DONE [%d/%d] %s", index, total, deployment_name)
             return None
         except Exception as exc:  # noqa: BLE001
-            logger.error(">>> FAILED [%d/%d] %s: %s", index, total, deployment_name, exc)
+            logger.error(
+                ">>> FAILED [%d/%d] %s: %s", index, total, deployment_name, exc
+            )
             return deployment_name
 
 
@@ -114,7 +149,9 @@ def main() -> None:
     workers = min(args.max_workers, total)
     logger.info(
         "Applying %d deployment(s) with up to %d concurrent workers (backend=%s).",
-        total, workers, ctx.backend,
+        total,
+        workers,
+        ctx.backend,
     )
 
     failed: list[str] = []
@@ -142,4 +179,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
- 
