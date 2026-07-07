@@ -1,6 +1,6 @@
 [project]
 name = "prefect-deployments-toolkit"
-version = "0.0.7"
+version = "0.0.8"
 description = "CLI toolkit for detecting and applying Prefect deployment changes in CI/CD pipelines"
 readme = "README.md"
 license = { text = "PolyForm-Noncommercial-1.0.0" }
