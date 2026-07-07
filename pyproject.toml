@@ -28,7 +28,8 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest>=8",
-    "pytest-mock>=3"
+    "pytest-mock>=3",
+    "coverage>=7",
 ]
 
 [project.urls]
