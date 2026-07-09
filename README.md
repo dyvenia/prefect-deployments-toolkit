@@ -1,7 +1,7 @@
 # Prefect Deployments Toolkit
 
-![PyPI](https://img.shields.io/pypi/v/django-cotton?color=blue&style=flat-square)
-[![PyPI Downloads](https://static.pepy.tech/badge/django-cotton/month)](https://pepy.tech/projects/django-cotton)
+![PyPI](https://img.shields.io/pypi/v/prefect-deployments-toolkit?color=blue&style=flat-square)
+[![PyPI Downloads](https://static.pepy.tech/badge/prefect-deployments-toolkit/month)](https://pepy.tech/projects/prefect-deployments-toolkit)
 
 A lightweight CLI toolkit for managing Prefect deployment lifecycles in CI/CD pipelines. It detects deployments that were added, modified, or removed between two git references, and applies (creates, updates, or deletes) those deployments against Prefect Cloud or a self-hosted Prefect server — via either the Prefect CLI or direct REST API calls.
 
