@@ -23,7 +23,7 @@ def find_deployment_file(deployment_name: str, deployments_dir: Path) -> Path | 
     Raises ValueError if multiple matches are found.
     """
     logger.info("Looking for deployment '%s' in deployment files...", deployment_name)
-    pattern = rf"^\s*-\s*name:\s*{deployment_name}\s*$"
+    pattern = rf'^\s*-\s*name:\s*["\']?{deployment_name}["\']?\s*$'
     result = subprocess.run(
         [
             "grep",
