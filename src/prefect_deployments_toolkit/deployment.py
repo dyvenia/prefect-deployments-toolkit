@@ -238,19 +238,24 @@ def apply_single_deployment(deployment_name: str, ctx: DeploymentContext) -> Non
         # Detect flow rename: if flow_id changed post-deploy, clean up the old deployment
         new_flow_ids = prefect_rest.get_flow_ids_for_deployment(full_name)
 
+        stale_flow_id_already_deleted = None
         if flow_id and new_flow_id and new_flow_id != flow_id:
             logger.info(
                 "Flow changed post-deploy — removing stale deployment under old flow."
             )
             ctx.client.delete_deployment(f"{flow_name}/{full_name}")
+            stale_flow_id_already_deleted = flow_id
 
         flow_name = resolved_flow_name or flow_name
 
         # If duplicates existed under other flows and enforcement is on,
         # clean up everything except the deployment matching the current flow.
         if ctx.enforce_unique_deployment_names and flow_name and new_flow_id:
+            remaining_flow_ids = [
+                fid for fid in new_flow_ids if fid != stale_flow_id_already_deleted
+            ]
             _cleanup_duplicate_deployments(
-                ctx, full_name, new_flow_id, flow_name, new_flow_ids
+                ctx, full_name, new_flow_id, flow_name, remaining_flow_ids
             )
 
         if flow_name:
