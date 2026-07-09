@@ -477,7 +477,10 @@ def deploy(
     job_variables: dict[str, str],
     prefect_file: Path,
 ) -> None:
-    """Create or update a single deployment via the Prefect REST API."""
+    """Create or update a single deployment via the Prefect REST API.
+
+    Returns (flow_id, flow_name) actually used for this deployment.
+    """
     extracted = _find_deployment_spec(prefect_file, deployment_name)
     spec = extracted["spec"]
     pull_steps = extracted["pull_steps"]  # left untouched — resolved at runtime
@@ -533,6 +536,8 @@ def deploy(
 
     logger.info("Deployment '%s' applied successfully via REST.", deployment_name)
     logger.info("View Deployment in UI: %s", ui_deployment_url(deployment_id))
+
+    return flow_id, flow_name
 
 
 def delete_deployment(full_name: str) -> None:
