@@ -16,7 +16,6 @@ MOD = "prefect_deployments_toolkit.deployment"
 
 
 def _make_ctx(**overrides) -> "DeploymentContext":
-
     defaults = dict(
         deployment_names=["my-flow"],
         enable_schedule=False,
@@ -195,6 +194,7 @@ class TestCleanupDuplicateDeployments:
                 current_flow_name="current-flow",
                 flow_ids=["fid-current"],  # only current — no stale
             )
+
         mock_client.delete_deployment.assert_not_called()
 
 
@@ -431,6 +431,11 @@ class TestApplySingleDeployment:
     """
     All external collaborators (yaml_utils, prefect_rest, ctx.client) are
     mocked. Tests verify orchestration logic, not individual helpers.
+
+    NOTE: `ctx.client.deploy(...)` now returns a (flow_id, flow_name) tuple
+    (matching the real prefect_rest.deploy / prefect_cli.deploy contract).
+    Every mock_client built here has `.deploy.return_value` set explicitly —
+    otherwise MagicMock's auto-generated return value fails to unpack.
     """
 
     def _default_patches(
@@ -454,11 +459,15 @@ class TestApplySingleDeployment:
             f"{MOD}.time.sleep": None,
         }
 
-    def _apply(self, ctx, patches: dict):
-        """Apply all patches and call apply_single_deployment."""
+    def _apply(self, ctx, patches: dict, deploy_return=("fid-1", "my-flow-name")):
+        """Apply all patches and call apply_single_deployment.
+
+        `deploy_return` is what `ctx.client.deploy(...)` will return.
+        """
         from prefect_deployments_toolkit.deployment import apply_single_deployment
 
         mock_client = MagicMock()
+        mock_client.deploy.return_value = deploy_return
         with patch.object(
             type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
         ):
@@ -481,6 +490,7 @@ class TestApplySingleDeployment:
 
         ctx = _make_ctx()
         mock_client = MagicMock()
+        mock_client.deploy.return_value = ("fid-1", "my-flow-name")
         with patch.object(
             type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
         ):
@@ -508,6 +518,7 @@ class TestApplySingleDeployment:
 
         def capture_deploy(name, *a, **kw):
             deployed_names.append(name)
+            return ("fid-1", "my-flow-name")
 
         mock_client.deploy.side_effect = capture_deploy
 
@@ -545,6 +556,7 @@ class TestApplySingleDeployment:
 
         ctx = _make_ctx(reference="feature-x")
         mock_client = MagicMock()
+        mock_client.deploy.return_value = ("fid-1", "my-flow-name")
 
         with patch.object(
             type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
@@ -565,6 +577,7 @@ class TestApplySingleDeployment:
                     f"{MOD}.prefect_rest.get_flow_ids_for_deployment", return_value=[]
                 ),
                 patch(f"{MOD}.prefect_rest.get_flow_name", return_value=None),
+                patch(f"{MOD}.prefect_rest.get_schedule_ids", return_value=[]),
                 patch(f"{MOD}.time.sleep"),
             ):
                 apply_single_deployment("my-flow", ctx)
@@ -577,6 +590,7 @@ class TestApplySingleDeployment:
 
         ctx = _make_ctx(reference="main")
         mock_client = MagicMock()
+        mock_client.deploy.return_value = ("fid-1", "my-flow-name")
 
         with patch.object(
             type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
@@ -612,6 +626,9 @@ class TestApplySingleDeployment:
 
         ctx = _make_ctx(reference="main")
         mock_client = MagicMock()
+        # Deploy resolves to a NEW flow_id/flow_name, different from the
+        # pre-deploy ("fid-old", "old-flow-name") resolved by _resolve_flow_name.
+        mock_client.deploy.return_value = ("fid-new", "new-flow-name")
 
         with patch.object(
             type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
@@ -679,6 +696,7 @@ class TestApplySingleDeployment:
 
         ctx = _make_ctx(enable_schedule=True, reference="main")
         mock_client = MagicMock()
+        mock_client.deploy.return_value = ("fid-1", "flow-name")
 
         with patch.object(
             type(ctx), "client", new_callable=PropertyMock, return_value=mock_client

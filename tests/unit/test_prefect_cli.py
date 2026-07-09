@@ -96,7 +96,15 @@ class TestDeploy:
     def test_base_command_structure(self):
         from prefect_deployments_toolkit import prefect_cli as pc
 
-        with patch.object(pc.subprocess, "run", return_value=_completed()) as mock_run:
+        with (
+            patch.object(pc.subprocess, "run", return_value=_completed()) as mock_run,
+            patch.object(
+                pc.prefect_rest,
+                "get_deployment_by_name",
+                return_value={"flow_id": "fid-1"},
+            ),
+            patch.object(pc.prefect_rest, "get_flow_name", return_value="my-flow-name"),
+        ):
             pc.deploy("my-flow", [], {}, Path("/tmp/prefect.yaml"))
         cmd = mock_run.call_args[0][0]
         assert cmd[:4] == ["prefect", "--no-prompt", "deploy", "-n"]
@@ -105,46 +113,78 @@ class TestDeploy:
     def test_tags_appended_correctly(self):
         from prefect_deployments_toolkit import prefect_cli as pc
 
-        with patch.object(pc.subprocess, "run", return_value=_completed()) as mock_run:
+        with (
+            patch.object(pc.subprocess, "run", return_value=_completed()) as mock_run,
+            patch.object(
+                pc.prefect_rest,
+                "get_deployment_by_name",
+                return_value={"flow_id": "fid-1"},
+            ),
+            patch.object(pc.prefect_rest, "get_flow_name", return_value="my-flow-name"),
+        ):
             pc.deploy("my-flow", ["v1.0", "prod"], {}, Path("/tmp/prefect.yaml"))
-        cmd = mock_run.call_args[0][0]
-        assert "--tag" in cmd
-        tag_pairs = [cmd[i + 1] for i, x in enumerate(cmd) if x == "--tag"]
-        assert set(tag_pairs) == {"v1.0", "prod"}
+            cmd = mock_run.call_args[0][0]
+            assert "--tag" in cmd
+            tag_pairs = [cmd[i + 1] for i, x in enumerate(cmd) if x == "--tag"]
+            assert set(tag_pairs) == {"v1.0", "prod"}
 
     def test_job_variables_appended_correctly(self):
         from prefect_deployments_toolkit import prefect_cli as pc
 
-        with patch.object(pc.subprocess, "run", return_value=_completed()) as mock_run:
+        with (
+            patch.object(pc.subprocess, "run", return_value=_completed()) as mock_run,
+            patch.object(
+                pc.prefect_rest,
+                "get_deployment_by_name",
+                return_value={"flow_id": "fid-1"},
+            ),
+            patch.object(pc.prefect_rest, "get_flow_name", return_value="my-flow-name"),
+        ):
             pc.deploy(
                 "my-flow",
                 [],
                 {"image": "myrepo/img:latest", "cpu": "2"},
                 Path("/tmp/prefect.yaml"),
             )
-        cmd = mock_run.call_args[0][0]
-        jv_values = [cmd[i + 1] for i, x in enumerate(cmd) if x == "--job-variable"]
-        assert "image=myrepo/img:latest" in jv_values
-        assert "cpu=2" in jv_values
+            cmd = mock_run.call_args[0][0]
+            jv_values = [cmd[i + 1] for i, x in enumerate(cmd) if x == "--job-variable"]
+            assert "image=myrepo/img:latest" in jv_values
+            assert "cpu=2" in jv_values
 
     def test_prefect_file_appended(self):
         from prefect_deployments_toolkit import prefect_cli as pc
 
         pf = Path("/some/path/prefect.yaml")
-        with patch.object(pc.subprocess, "run", return_value=_completed()) as mock_run:
+        with (
+            patch.object(pc.subprocess, "run", return_value=_completed()) as mock_run,
+            patch.object(
+                pc.prefect_rest,
+                "get_deployment_by_name",
+                return_value={"flow_id": "fid-1"},
+            ),
+            patch.object(pc.prefect_rest, "get_flow_name", return_value="my-flow-name"),
+        ):
             pc.deploy("my-flow", [], {}, pf)
-        cmd = mock_run.call_args[0][0]
-        assert "--prefect-file" in cmd
-        assert str(pf) in cmd
+            cmd = mock_run.call_args[0][0]
+            assert "--prefect-file" in cmd
+            assert str(pf) in cmd
 
     def test_empty_tags_and_vars_produces_minimal_command(self):
         from prefect_deployments_toolkit import prefect_cli as pc
 
-        with patch.object(pc.subprocess, "run", return_value=_completed()) as mock_run:
+        with (
+            patch.object(pc.subprocess, "run", return_value=_completed()) as mock_run,
+            patch.object(
+                pc.prefect_rest,
+                "get_deployment_by_name",
+                return_value={"flow_id": "fid-1"},
+            ),
+            patch.object(pc.prefect_rest, "get_flow_name", return_value="my-flow-name"),
+        ):
             pc.deploy("my-flow", [], {}, Path("/tmp/prefect.yaml"))
-        cmd = mock_run.call_args[0][0]
-        assert "--tag" not in cmd
-        assert "--job-variable" not in cmd
+            cmd = mock_run.call_args[0][0]
+            assert "--tag" not in cmd
+            assert "--job-variable" not in cmd
 
     def test_raises_on_cli_failure(self):
         from prefect_deployments_toolkit import prefect_cli as pc

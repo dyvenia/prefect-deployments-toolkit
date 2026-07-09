@@ -4,6 +4,8 @@ import logging
 import subprocess
 from pathlib import Path
 
+from . import prefect_rest
+
 logger = logging.getLogger(__name__)
 
 
@@ -27,7 +29,13 @@ def deploy(
     job_variables: dict[str, str],
     prefect_file: Path,
 ) -> None:
-    """Run `prefect deploy` for a single deployment."""
+    """Run `prefect deploy` for a single deployment.
+
+    Returns (flow_id, flow_name) actually used for this deployment, resolved
+    via a REST lookup after the CLI deploy completes — mirrors the tuple
+    contract `prefect_rest.deploy()` returns, so `deployment.py` can call
+    either backend interchangeably through `ctx.client.deploy(...)`.
+    """
     cmd = ["prefect", "--no-prompt", "deploy", "-n", deployment_name]
     for tag in tags:
         cmd += ["--tag", tag]
@@ -35,6 +43,19 @@ def deploy(
         cmd += ["--job-variable", f"{key}={value}"]
     cmd += ["--prefect-file", str(prefect_file)]
     _run(cmd)
+
+    deployment = prefect_rest.get_deployment_by_name(deployment_name)
+    if deployment is None:
+        logger.warning(
+            "Could not find deployment '%s' via REST after CLI deploy — "
+            "flow_id/flow_name resolution skipped.",
+            deployment_name,
+        )
+        return "", None
+
+    flow_id = deployment.get("flow_id", "")
+    flow_name = prefect_rest.get_flow_name(flow_id) if flow_id else None
+    return flow_id, flow_name
 
 
 def delete_deployment(full_name: str) -> None:
