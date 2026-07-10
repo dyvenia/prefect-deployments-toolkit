@@ -1,5 +1,7 @@
 """Thin wrappers around the Prefect CLI for deploy/delete/schedule operations."""
 
+from __future__ import annotations
+
 import logging
 import subprocess
 from pathlib import Path

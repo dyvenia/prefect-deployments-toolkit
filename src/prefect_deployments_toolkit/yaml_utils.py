@@ -1,5 +1,7 @@
 """YAML file helpers for reading and mutating prefect deployment configs."""
 
+from __future__ import annotations
+
 import logging
 import subprocess
 from pathlib import Path
@@ -68,7 +70,7 @@ def build_merged_prefect_file(
 def load_deployment_config(merged_file: Path, deployment_name: str) -> dict:
     """Return the parsed config dict for a named deployment from a merged YAML file."""
     content = yaml.safe_load(merged_file.read_text())
-    deployments = content.get("deployments", [])
+    deployments = content.get("deployments") or []
     for d in deployments:
         if d.get("name") == deployment_name:
             return d
@@ -128,7 +130,7 @@ def apply_dev_overrides(
 def set_git_clone_branch(merged_file: Path, branch: str) -> None:
     """Set git_clone.branch in all pull steps of the merged YAML in-place."""
     content = yaml.safe_load(merged_file.read_text())
-    for step in content.get("pull", []):
+    for step in content.get("pull") or []:
         git_clone = step.get("prefect.deployments.steps.git_clone")
         if git_clone is not None:
             git_clone["branch"] = branch
@@ -142,7 +144,7 @@ def set_schedules_active(merged_file: Path, deployment_name: str, active: bool) 
     content = yaml.safe_load(merged_file.read_text())
     for d in content.get("deployments", []):
         if d.get("name") == deployment_name:
-            for schedule in d.get("schedules", []):
+            for schedule in d.get("schedules") or []:
                 schedule["active"] = active
             break
     merged_file.write_text(
@@ -153,13 +155,14 @@ def set_schedules_active(merged_file: Path, deployment_name: str, active: bool) 
 def get_deployment_tags(merged_file: Path, deployment_name: str) -> list[str]:
     """Return the tags list for a named deployment."""
     config = load_deployment_config(merged_file, deployment_name)
-    return config.get("tags", [])
+    return config.get("tags") or []
 
 
 def get_job_variables(merged_file: Path, deployment_name: str) -> dict[str, str]:
     """Return the work_pool.job_variables dict for a named deployment."""
     config = load_deployment_config(merged_file, deployment_name)
-    return config.get("work_pool", {}).get("job_variables", {})
+    work_pool = config.get("work_pool") or {}
+    return work_pool.get("job_variables") or {}
 
 
 def has_schedules(merged_file: Path, deployment_name: str) -> bool:

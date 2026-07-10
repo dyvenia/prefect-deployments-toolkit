@@ -41,6 +41,8 @@ Other notes:
   name behavior, matching what `prefect deploy` does internally.
 """
 
+from __future__ import annotations
+
 import base64
 import importlib
 import importlib.util
