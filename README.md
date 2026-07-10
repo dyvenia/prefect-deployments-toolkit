@@ -22,7 +22,7 @@ Built for teams running many Prefect flows out of a monorepo, where each deploym
 pip install prefect-deployments-toolkit
 ```
 
-Requires Python >= 3.10.
+Requires Python >= 3.9.
 
 ## Usage
 
