@@ -11,7 +11,7 @@ Built for teams running many Prefect flows out of a monorepo, where each deploym
 
 - **Change detection** — diff deployments between two git refs (a merge request source vs. target branch, or `HEAD~1` vs. `HEAD` after a merge) and get back exactly which deployments were added, modified, or removed.
 - **Unified push / pull-request logic** — one code path handles both `pull_request` (compare local files against a fetched base branch) and `push`/`pull_request_target` (compare `HEAD~1` against `HEAD`) event styles.
-- **Dual deploy backends** — apply deployments using the `prefect` CLI as a subprocess, or bypass it entirely with direct Prefect Cloud REST API calls for faster, more controllable deploys.
+- **Dual deploy backends** — apply deployments using the `prefect` CLI as a subprocess, or bypass it entirely with direct REST API calls for faster, more controllable deploys. Both backends work against Prefect Cloud and self-hosted/OSS Prefect servers.
 - **Dev/prod environment overrides** — automatic name prefixing, work pool substitution, and schedule pausing for dev environments.
 - **Concurrent deployment application** — apply multiple deployments in parallel with clean, non-interleaved log output per deployment.
 - **Duplicate deployment name detection** — warns (or optionally cleans up) when the same deployment name resolves to more than one flow.
@@ -72,17 +72,22 @@ Each deployment YAML file must declare a `deployments:` list with at least a `na
 
 ## Backends
 
-| Backend | How it works                                 | When to use                                                            |
-| ------- | -------------------------------------------- | ---------------------------------------------------------------------- |
-| `cli`   | Shells out to `prefect deploy`               | Simplest, matches local `prefect deploy` behavior exactly              |
-| `rest`  | Talks directly to the Prefect Cloud REST API | Faster for many concurrent deployments, avoids CLI subprocess overhead |
+| Backend | How it works                           | When to use                                                            |
+| ------- | -------------------------------------- | ---------------------------------------------------------------------- |
+| `cli`   | Shells out to `prefect deploy`         | Simplest, matches local `prefect deploy` behavior exactly              |
+| `rest`  | Talks directly to the Prefect REST API | Faster for many concurrent deployments, avoids CLI subprocess overhead |
+
+Both backends work against Prefect Cloud (`api.prefect.cloud`) and self-hosted/OSS Prefect servers — the target is determined entirely by `PREFECT_API_URL`.
 
 ## Environment Variables
 
-| Variable          | Required | Purpose                                |
-| ----------------- | -------- | -------------------------------------- |
-| `PREFECT_API_URL` | Yes      | Full Prefect Cloud/server API base URL |
-| `PREFECT_API_KEY` | Yes      | API key for authentication             |
+| Variable                  | Required                                             | Purpose                                                                                                                                                  |
+| ------------------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PREFECT_API_URL`         | Yes                                                  | Full API base URL. Cloud: `https://api.prefect.cloud/api/accounts/<id>/workspaces/<id>`. Self-hosted: e.g. `https://your-prefect-server.company.com/api` |
+| `PREFECT_API_KEY`         | Only for Prefect Cloud                               | Cloud API key, sent as a Bearer token                                                                                                                    |
+| `PREFECT_API_AUTH_STRING` | Only for self-hosted servers with Basic auth enabled | Sent as HTTP Basic auth (base64-encoded)                                                                                                                 |
+
+Neither `PREFECT_API_KEY` nor `PREFECT_API_AUTH_STRING` is required if your self-hosted Prefect server has no authentication configured — only `PREFECT_API_URL` is mandatory in every setup.
 
 ## License
 
