@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - python 3.9 support added - from **future** import annotations
+- fixing 'NoneType' object is not iterable
 
 [0.1.4]: https://github.com/yourusername/prefect-deployments-toolkit/releases/tag/v0.1.4
 
