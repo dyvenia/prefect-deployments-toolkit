@@ -1,5 +1,7 @@
 """Core logic for applying a single Prefect deployment."""
 
+from __future__ import annotations
+
 import logging
 import tempfile
 import time

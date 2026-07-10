@@ -1,5 +1,7 @@
 """YAML file helpers for reading and mutating prefect deployment configs."""
 
+from __future__ import annotations
+
 import logging
 import subprocess
 from pathlib import Path
