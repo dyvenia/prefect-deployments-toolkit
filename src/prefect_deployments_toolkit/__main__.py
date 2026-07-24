@@ -14,6 +14,8 @@ python -m apply_deployments \
     --enforce-unique-deployment-names false
 """
 
+from __future__ import annotations
+
 import argparse
 import logging
 import sys
