@@ -93,6 +93,16 @@ def _parse_args() -> argparse.Namespace:
             "its entrypoint, enforcing globally unique deployment names."
         ),
     )
+    parser.add_argument(
+        "--models-dir",
+        default="",
+        help=(
+            "Relative path (under the deployed repo dir) to the dbt models "
+            "directory. When set, DBT_PROJECT_DIR and DBT_PROFILES_DIR job "
+            "variables are derived from it. When empty (default), those "
+            "variables are not set on dev deployment configuration."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -145,6 +155,7 @@ def main() -> None:
         dev_prefect_work_pool_name=args.dev_work_pool,
         backend=args.backend,
         enforce_unique_deployment_names=args.enforce_unique_deployment_names == "true",
+        models_dir=args.models_dir,
     )
 
     total = len(names)

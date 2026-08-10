@@ -29,6 +29,7 @@ class DeploymentContext:
     dev_prefect_work_pool_name: str = ""
     backend: str = "cli"  # "cli" or "rest"
     enforce_unique_deployment_names: bool = False
+    models_dir: str = ""
 
     @property
     def is_dev(self) -> bool:
@@ -131,9 +132,11 @@ def _build_job_variables(
 
     if ctx.is_non_default_branch:
         base = f"/opt/prefect/{ctx.repo_name}-{ctx.reference}"
-        job_vars["DBT_PROJECT_DIR"] = f"{base}/src/edp_flows/models"
-        job_vars["DBT_PROFILES_DIR"] = f"{base}/src/edp_flows/models"
         job_vars["METRICS_EXPORTER_DIR"] = f"{base}/etc"
+
+        if ctx.models_dir:
+            job_vars["DBT_PROJECT_DIR"] = f"{base}/{ctx.models_dir}"
+            job_vars["DBT_PROFILES_DIR"] = f"{base}/{ctx.models_dir}"
 
     if ctx.custom_image:
         job_vars["image"] = ctx.custom_image
