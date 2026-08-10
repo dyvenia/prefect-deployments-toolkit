@@ -27,6 +27,7 @@ def _make_ctx(**overrides) -> "DeploymentContext":
         dev_prefect_work_pool_name="",
         backend="cli",
         enforce_unique_deployment_names=False,
+        models_dir="",
     )
     defaults.update(overrides)
     return DeploymentContext(**defaults)
@@ -259,13 +260,31 @@ class TestBuildJobVariables:
     def test_dbt_vars_added_on_non_default_branch(self):
         from prefect_deployments_toolkit.deployment import _build_job_variables
 
-        ctx = _make_ctx(reference="feature-x", repo_name="edp-flows")
+        ctx = _make_ctx(
+            reference="feature-x",
+            repo_name="edp-flows",
+            models_dir="src/edp_flows/models",
+        )
         with patch(f"{MOD}.yaml_utils.get_job_variables", return_value={}):
             jv = _build_job_variables(ctx, Path("/tmp/m.yaml"), "my-flow")
         assert "DBT_PROJECT_DIR" in jv
         assert "DBT_PROFILES_DIR" in jv
         assert "METRICS_EXPORTER_DIR" in jv
         assert "feature-x" in jv["DBT_PROJECT_DIR"]
+
+    def test_dbt_vars_not_added_when_models_dir_empty(self):
+        from prefect_deployments_toolkit.deployment import _build_job_variables
+
+        ctx = _make_ctx(
+            reference="feature-x", repo_name="edp-flows"
+        )  # models_dir defaults to ""
+        with patch(f"{MOD}.yaml_utils.get_job_variables", return_value={}):
+            jv = _build_job_variables(ctx, Path("/tmp/m.yaml"), "my-flow")
+        assert "DBT_PROJECT_DIR" not in jv
+        assert "DBT_PROFILES_DIR" not in jv
+        assert (
+            "METRICS_EXPORTER_DIR" in jv
+        )  # unaffected — still set on non-default branch
 
     def test_dbt_vars_not_added_on_main(self):
         from prefect_deployments_toolkit.deployment import _build_job_variables
