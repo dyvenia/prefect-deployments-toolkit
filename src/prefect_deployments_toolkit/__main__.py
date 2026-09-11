@@ -103,6 +103,12 @@ def _parse_args() -> argparse.Namespace:
             "variables are not set on dev deployment configuration."
         ),
     )
+    parser.add_argument(
+        "--add-work-queue-tag",
+        default="false",
+        choices=["true", "false"],
+        help="Whether to append the work queue name as a tag (default: false).",
+    )
     return parser.parse_args()
 
 
@@ -156,6 +162,7 @@ def main() -> None:
         backend=args.backend,
         enforce_unique_deployment_names=args.enforce_unique_deployment_names == "true",
         models_dir=args.models_dir,
+        add_work_queue_tag=args.add_work_queue_tag,
     )
 
     total = len(names)

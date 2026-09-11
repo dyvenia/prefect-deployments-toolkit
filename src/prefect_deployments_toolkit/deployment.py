@@ -30,6 +30,7 @@ class DeploymentContext:
     backend: str = "cli"  # "cli" or "rest"
     enforce_unique_deployment_names: bool = False
     models_dir: str = ""
+    add_work_queue_tag: bool = False
 
     @property
     def is_dev(self) -> bool:
@@ -120,6 +121,13 @@ def _cleanup_duplicate_deployments(
 def _build_tags(ctx: DeploymentContext, merged_file: Path, full_name: str) -> list[str]:
     tags = [ctx.tag, ctx.reference]
     tags += yaml_utils.get_deployment_tags(merged_file, full_name)
+
+    if ctx.add_work_queue_tag:
+        config = yaml_utils.load_deployment_config(merged_file, full_name)
+        work_queue_name = config.get("work_pool", {}).get("work_queue_name")
+        if work_queue_name:
+            tags.append(work_queue_name)
+
     return tags
 
 

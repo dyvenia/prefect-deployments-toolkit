@@ -28,6 +28,7 @@ def _make_ctx(**overrides) -> "DeploymentContext":
         backend="cli",
         enforce_unique_deployment_names=False,
         models_dir="",
+        add_work_queue_tag=False,
     )
     defaults.update(overrides)
     return DeploymentContext(**defaults)
@@ -747,3 +748,48 @@ class TestApplySingleDeployment:
             mock_active.call_args[1]["active"] is True
             or mock_active.call_args[0][2] is True
         )
+
+    def test_does_not_append_work_queue_when_flag_is_false(self):
+        from prefect_deployments_toolkit.deployment import _build_tags
+
+        ctx = _make_ctx(add_work_queue_tag=False)
+        with (
+            patch(f"{MOD}.yaml_utils.get_deployment_tags", return_value=[]),
+            patch(
+                f"{MOD}.yaml_utils.load_deployment_config",
+                return_value={"work_pool": {"work_queue_name": "my-queue"}},
+            ),
+        ):
+            tags = _build_tags(ctx, Path("/tmp/merged.yaml"), "my-flow")
+
+        assert "my-queue" not in tags
+
+    def test_appends_work_queue_when_flag_is_true(self):
+        from prefect_deployments_toolkit.deployment import _build_tags
+
+        ctx = _make_ctx(add_work_queue_tag=True)
+        with (
+            patch(f"{MOD}.yaml_utils.get_deployment_tags", return_value=[]),
+            patch(
+                f"{MOD}.yaml_utils.load_deployment_config",
+                return_value={"work_pool": {"work_queue_name": "my-queue"}},
+            ),
+        ):
+            tags = _build_tags(ctx, Path("/tmp/merged.yaml"), "my-flow")
+
+        assert "my-queue" in tags
+
+    def test_ignores_missing_work_queue_when_flag_is_true(self):
+        from prefect_deployments_toolkit.deployment import _build_tags
+
+        ctx = _make_ctx(add_work_queue_tag=True)
+        with (
+            patch(f"{MOD}.yaml_utils.get_deployment_tags", return_value=[]),
+            patch(
+                f"{MOD}.yaml_utils.load_deployment_config",
+                return_value={"work_pool": {}},
+            ),
+        ):
+            tags = _build_tags(ctx, Path("/tmp/merged.yaml"), "my-flow")
+
+        assert len(tags) == 2  # Only standard tag and reference
