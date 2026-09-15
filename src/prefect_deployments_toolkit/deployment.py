@@ -119,7 +119,9 @@ def _cleanup_duplicate_deployments(
         ctx.client.delete_deployment(f"{stale_flow_name}/{deployment_name}")
 
 
-def _build_tags(ctx: DeploymentContext, merged_file: Path, full_name: str, yaml_file: Path) -> list[str]:
+def _build_tags(
+    ctx: DeploymentContext, merged_file: Path, full_name: str, yaml_file: Path
+) -> list[str]:
     tags = [ctx.tag, ctx.reference]
     tags += yaml_utils.get_deployment_tags(merged_file, full_name)
 
