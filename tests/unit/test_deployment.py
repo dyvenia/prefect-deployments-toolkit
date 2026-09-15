@@ -228,7 +228,12 @@ class TestBuildTags:
         with patch(
             f"{MOD}.yaml_utils.get_deployment_tags", return_value=["etl", "prod"]
         ):
-            tags = _build_tags(ctx, Path("/tmp/merged.yaml"), "my-flow")
+            tags = _build_tags(
+                ctx,
+                Path("/tmp/merged.yaml"),
+                "my-flow",
+                Path("deployments/my-flow.yaml"),
+            )
         assert "etl" in tags
         assert "prod" in tags
 
@@ -237,7 +242,12 @@ class TestBuildTags:
 
         ctx = _make_ctx(tag="v1.0", reference="main")
         with patch(f"{MOD}.yaml_utils.get_deployment_tags", return_value=["extra"]):
-            tags = _build_tags(ctx, Path("/tmp/merged.yaml"), "my-flow")
+            tags = _build_tags(
+                ctx,
+                Path("/tmp/merged.yaml"),
+                "my-flow",
+                Path("deployments/my-flow.yaml"),
+            )
         assert tags[0] == "v1.0"
         assert tags[1] == "main"
 
@@ -766,7 +776,12 @@ class TestApplySingleDeployment:
                 return_value={"work_pool": {"work_queue_name": "my-queue"}},
             ),
         ):
-            tags = _build_tags(ctx, Path("/tmp/merged.yaml"), "my-flow")
+            tags = _build_tags(
+                ctx,
+                Path("/tmp/merged.yaml"),
+                "my-flow",
+                Path("deployments/my-flow.yaml"),
+            )
 
         assert "my-queue" not in tags
 
@@ -781,7 +796,12 @@ class TestApplySingleDeployment:
                 return_value={"work_pool": {"work_queue_name": "my-queue"}},
             ),
         ):
-            tags = _build_tags(ctx, Path("/tmp/merged.yaml"), "my-flow")
+            tags = _build_tags(
+                ctx,
+                Path("/tmp/merged.yaml"),
+                "my-flow",
+                Path("deployments/my-flow.yaml"),
+            )
 
         assert "my-queue" in tags
 
@@ -796,7 +816,12 @@ class TestApplySingleDeployment:
                 return_value={"work_pool": {}},
             ),
         ):
-            tags = _build_tags(ctx, Path("/tmp/merged.yaml"), "my-flow")
+            tags = _build_tags(
+                ctx,
+                Path("/tmp/merged.yaml"),
+                "my-flow",
+                Path("deployments/my-flow.yaml"),
+            )
 
         assert len(tags) == 2  # Only standard tag and reference
 
