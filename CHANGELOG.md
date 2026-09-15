@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - --add-work-queue-tag parameter added to append the work queue name as a tag
+- --add-path-tags parameter added to append the directory path components as tags
 
 [0.1.6]: https://github.com/yourusername/prefect-deployments-toolkit/releases/tag/v0.1.6
 

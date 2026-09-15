@@ -29,6 +29,7 @@ def _make_ctx(**overrides) -> "DeploymentContext":
         enforce_unique_deployment_names=False,
         models_dir="",
         add_work_queue_tag=False,
+        add_path_tags=False,
     )
     defaults.update(overrides)
     return DeploymentContext(**defaults)
@@ -211,7 +212,7 @@ class TestBuildTags:
 
         ctx = _make_ctx(tag="v2.0", reference="main")
         with patch(f"{MOD}.yaml_utils.get_deployment_tags", return_value=[]):
-            tags = _build_tags(ctx, Path("/tmp/merged.yaml"), "my-flow")
+            tags = _build_tags(ctx, Path("/tmp/merged.yaml"), "my-flow", Path("deployments/my-flow.yaml"))
         assert "v2.0" in tags
         assert "main" in tags
 
@@ -793,3 +794,54 @@ class TestApplySingleDeployment:
             tags = _build_tags(ctx, Path("/tmp/merged.yaml"), "my-flow")
 
         assert len(tags) == 2  # Only standard tag and reference
+
+    def test_does_not_append_path_tags_when_flag_is_false(self):
+        from prefect_deployments_toolkit.deployment import _build_tags
+
+        ctx = _make_ctx(add_path_tags=False, deployments_dir=Path("prefect/deployments"))
+        yaml_file = Path("prefect/deployments/extract/launchpad/prefect.yaml")
+        
+        with patch(f"{MOD}.yaml_utils.get_deployment_tags", return_value=[]):
+            tags = _build_tags(ctx, Path("/tmp/merged.yaml"), "my-flow", yaml_file)
+            
+        assert "extract" not in tags
+        assert "launchpad" not in tags
+
+    def test_appends_path_tags_when_flag_is_true(self):
+        from prefect_deployments_toolkit.deployment import _build_tags
+
+        ctx = _make_ctx(add_path_tags=True, deployments_dir=Path("prefect/deployments"))
+        yaml_file = Path("prefect/deployments/extract/launchpad/prefect.yaml")
+        
+        with patch(f"{MOD}.yaml_utils.get_deployment_tags", return_value=[]):
+            tags = _build_tags(ctx, Path("/tmp/merged.yaml"), "my-flow", yaml_file)
+            
+        assert "extract" in tags
+        assert "launchpad" in tags
+
+    def test_appends_single_path_tag_when_shallow(self):
+        from prefect_deployments_toolkit.deployment import _build_tags
+
+        ctx = _make_ctx(add_path_tags=True, deployments_dir=Path("project/prefect/deployments"))
+        yaml_file = Path("project/prefect/deployments/launchpad/prefect.yaml")
+        
+        with patch(f"{MOD}.yaml_utils.get_deployment_tags", return_value=[]):
+            tags = _build_tags(ctx, Path("/tmp/merged.yaml"), "my-flow", yaml_file)
+            
+        assert "launchpad" in tags
+        # Ensure ONLY 'launchpad' was appended besides the default tag and reference
+        appended_tags = [t for t in tags if t not in (ctx.tag, ctx.reference)]
+        assert len(appended_tags) == 1
+
+    def test_ignores_path_tags_if_not_relative_to_deployments_dir(self):
+        from prefect_deployments_toolkit.deployment import _build_tags
+
+        ctx = _make_ctx(add_path_tags=True, deployments_dir=Path("deployments"))
+        # Using a path completely outside the deployments_dir
+        yaml_file = Path("/some/other/path/prefect.yaml")
+        
+        with patch(f"{MOD}.yaml_utils.get_deployment_tags", return_value=[]):
+            tags = _build_tags(ctx, Path("/tmp/merged.yaml"), "my-flow", yaml_file)
+            
+        # Should catch ValueError internally and just return standard tags safely
+        assert len(tags) == 2

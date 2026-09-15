@@ -31,6 +31,7 @@ class DeploymentContext:
     enforce_unique_deployment_names: bool = False
     models_dir: str = ""
     add_work_queue_tag: bool = False
+    add_path_tags: bool = False
 
     @property
     def is_dev(self) -> bool:
@@ -118,7 +119,7 @@ def _cleanup_duplicate_deployments(
         ctx.client.delete_deployment(f"{stale_flow_name}/{deployment_name}")
 
 
-def _build_tags(ctx: DeploymentContext, merged_file: Path, full_name: str) -> list[str]:
+def _build_tags(ctx: DeploymentContext, merged_file: Path, full_name: str, yaml_file: Path) -> list[str]:
     tags = [ctx.tag, ctx.reference]
     tags += yaml_utils.get_deployment_tags(merged_file, full_name)
 
@@ -127,6 +128,16 @@ def _build_tags(ctx: DeploymentContext, merged_file: Path, full_name: str) -> li
         work_queue_name = config.get("work_pool", {}).get("work_queue_name")
         if work_queue_name:
             tags.append(work_queue_name)
+
+    if ctx.add_path_tags:
+        try:
+            # Get the directory of the yaml file, relative to deployments_dir
+            rel_path = yaml_file.parent.relative_to(ctx.deployments_dir)
+            # Add each folder name in the relative path as a tag (ignoring '.' for the root dir)
+            tags.extend([part for part in rel_path.parts if part not in (".", "")])
+        except ValueError:
+            # Failsafe in case yaml_file is somehow not inside deployments_dir
+            pass
 
     return tags
 
@@ -238,7 +249,7 @@ def apply_single_deployment(deployment_name: str, ctx: DeploymentContext) -> Non
         if ctx.enable_schedule and yaml_utils.has_schedules(merged_file, full_name):
             yaml_utils.set_schedules_active(merged_file, full_name, active=True)
 
-        tags = _build_tags(ctx, merged_file, full_name)
+        tags = _build_tags(ctx, merged_file, full_name, yaml_file)
         job_vars = _build_job_variables(ctx, merged_file, full_name)
         logger.info("Tags: %s", tags)
         logger.info("Job variables: %s", job_vars)
