@@ -30,6 +30,7 @@ def _make_ctx(**overrides) -> "DeploymentContext":
         models_dir="",
         add_work_queue_tag=False,
         add_path_tags=False,
+        key_value_tags=False,
     )
     defaults.update(overrides)
     return DeploymentContext(**defaults)
@@ -879,3 +880,35 @@ class TestApplySingleDeployment:
 
         # Should catch ValueError internally and just return standard tags safely
         assert len(tags) == 2
+
+    def test_formats_tags_as_key_value_when_flag_is_true(self):
+        from prefect_deployments_toolkit.deployment import _build_tags
+
+        ctx = _make_ctx(
+            tag="v1.0",
+            reference="main",
+            key_value_tags=True,
+            add_work_queue_tag=True,
+            add_path_tags=True,
+            deployments_dir=Path("prefect/deployments"),
+        )
+        yaml_file = Path("prefect/deployments/extract/launchpad/prefect.yaml")
+
+        with (
+            patch(
+                f"{MOD}.yaml_utils.get_deployment_tags",
+                return_value=["custom-yaml-tag"],
+            ),
+            patch(
+                f"{MOD}.yaml_utils.load_deployment_config",
+                return_value={"work_pool": {"work_queue_name": "my-queue"}},
+            ),
+        ):
+            tags = _build_tags(ctx, Path("/tmp/merged.yaml"), "my-flow", yaml_file)
+
+        assert "dev=v1.0" in tags
+        assert "ref=main" in tags
+        assert "custom-yaml-tag" in tags  # YAML tags remain untouched
+        assert "queue=my-queue" in tags
+        assert "path=extract" in tags
+        assert "path=launchpad" in tags
