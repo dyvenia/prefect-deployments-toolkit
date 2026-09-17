@@ -30,6 +30,9 @@ class DeploymentContext:
     backend: str = "cli"  # "cli" or "rest"
     enforce_unique_deployment_names: bool = False
     models_dir: str = ""
+    add_work_queue_tag: bool = False
+    add_path_tags: bool = False
+    key_value_tags: bool = False
 
     @property
     def is_dev(self) -> bool:
@@ -117,9 +120,34 @@ def _cleanup_duplicate_deployments(
         ctx.client.delete_deployment(f"{stale_flow_name}/{deployment_name}")
 
 
-def _build_tags(ctx: DeploymentContext, merged_file: Path, full_name: str) -> list[str]:
-    tags = [ctx.tag, ctx.reference]
+def _build_tags(
+    ctx: DeploymentContext, merged_file: Path, full_name: str, yaml_file: Path
+) -> list[str]:
+    tag_val = f"dev={ctx.tag}" if ctx.key_value_tags else ctx.tag
+    ref_val = f"ref={ctx.reference}" if ctx.key_value_tags else ctx.reference
+
+    tags = [tag_val, ref_val]
+
+    # YAML tags are appended exactly as defined
     tags += yaml_utils.get_deployment_tags(merged_file, full_name)
+
+    if ctx.add_work_queue_tag:
+        config = yaml_utils.load_deployment_config(merged_file, full_name)
+        work_queue_name = config.get("work_pool", {}).get("work_queue_name")
+        if work_queue_name:
+            tags.append(
+                f"queue={work_queue_name}" if ctx.key_value_tags else work_queue_name
+            )
+
+    if ctx.add_path_tags:
+        try:
+            rel_path = yaml_file.parent.relative_to(ctx.deployments_dir)
+            for part in rel_path.parts:
+                if part not in (".", ""):
+                    tags.append(f"path={part}" if ctx.key_value_tags else part)
+        except ValueError:
+            pass
+
     return tags
 
 
@@ -230,7 +258,7 @@ def apply_single_deployment(deployment_name: str, ctx: DeploymentContext) -> Non
         if ctx.enable_schedule and yaml_utils.has_schedules(merged_file, full_name):
             yaml_utils.set_schedules_active(merged_file, full_name, active=True)
 
-        tags = _build_tags(ctx, merged_file, full_name)
+        tags = _build_tags(ctx, merged_file, full_name, yaml_file)
         job_vars = _build_job_variables(ctx, merged_file, full_name)
         logger.info("Tags: %s", tags)
         logger.info("Job variables: %s", job_vars)
