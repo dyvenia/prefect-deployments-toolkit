@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed an issue where the `--add-work-queue-tag`, `--add-path-tags`, and `--key-value-tags` flags were always evaluating to true due to string parsing.
 
-[0.1.8]: https://github.com/yourusername/prefect-deployments-toolkit/releases/tag/v0.1.8
+[0.1.8]: https://github.com/dyvenia/prefect-deployments-toolkit/releases/tag/v0.1.8
 
 ## [0.1.7] - 2026-10-28
 
@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - preserve native types in deployment job variables instead of converting values to strings.
 - resolve Prefect Variable references in REST deployment job variables.
 
-[0.1.7]: https://github.com/yourusername/prefect-deployments-toolkit/releases/tag/v0.1.7
+[0.1.7]: https://github.com/dyvenia/prefect-deployments-toolkit/releases/tag/v0.1.7
 
 ## [0.1.6] - 2026-09-11
 
@@ -34,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - --add-path-tags parameter added to append the directory path components as tags
 - --key-value-tags parameter added to optionally format auto-generated tags as key=value pairs (dev=, ref=, queue=, path=)
 
-[0.1.6]: https://github.com/yourusername/prefect-deployments-toolkit/releases/tag/v0.1.6
+[0.1.6]: https://github.com/dyvenia/prefect-deployments-toolkit/releases/tag/v0.1.6
 
 ## [0.1.5] - 2026-08-10
 
@@ -42,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - models_dir parameter added to conditionally set DBT_PROJECT_DIR and DBT_PROFILES_DIR on dev deployments
 
-[0.1.5]: https://github.com/yourusername/prefect-deployments-toolkit/releases/tag/v0.1.5
+[0.1.5]: https://github.com/dyvenia/prefect-deployments-toolkit/releases/tag/v0.1.5
 
 ## [0.1.4] - 2026-07-10
 
@@ -51,7 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - python 3.9 support added - from **future** import annotations
 - fixing 'NoneType' object is not iterable
 
-[0.1.4]: https://github.com/yourusername/prefect-deployments-toolkit/releases/tag/v0.1.4
+[0.1.4]: https://github.com/dyvenia/prefect-deployments-toolkit/releases/tag/v0.1.4
 
 ## [0.1.3] - 2026-07-10
 
@@ -59,7 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - python 3.9 support added
 
-[0.1.3]: https://github.com/yourusername/prefect-deployments-toolkit/releases/tag/v0.1.3
+[0.1.3]: https://github.com/dyvenia/prefect-deployments-toolkit/releases/tag/v0.1.3
 
 ## [0.1.2] - 2026-07-09
 
@@ -67,7 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - readme fixed
 
-[0.1.2]: https://github.com/yourusername/prefect-deployments-toolkit/releases/tag/v0.1.2
+[0.1.2]: https://github.com/dyvenia/prefect-deployments-toolkit/releases/tag/v0.1.2
 
 ## [0.1.1] - 2026-07-09
 
@@ -75,7 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - fixed regex for deployment name - quoted name allowed
 
-[0.1.1]: https://github.com/yourusername/prefect-deployments-toolkit/releases/tag/v0.1.1
+[0.1.1]: https://github.com/dyvenia/prefect-deployments-toolkit/releases/tag/v0.1.1
 
 ## [0.1.0] - 2026-07-09
 
@@ -83,7 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - fix cleanup duplicate deployment - take flow_id and flow_name from deploy instead of taking the first one
 
-[0.1.0]: https://github.com/yourusername/prefect-deployments-toolkit/releases/tag/v0.1.0
+[0.1.0]: https://github.com/dyvenia/prefect-deployments-toolkit/releases/tag/v0.1.0
 
 ## [0.0.9] - 2026-07-07
 
@@ -91,7 +91,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - log_buffer fix
 
-[0.0.9]: https://github.com/yourusername/prefect-deployments-toolkit/releases/tag/v0.0.9
+[0.0.9]: https://github.com/dyvenia/prefect-deployments-toolkit/releases/tag/v0.0.9
 
 ## [0.0.8] - 2026-07-07
 
@@ -100,7 +100,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ci.yml for unit tests and pre-commit-checks
 - unit tests
 
-[0.0.8]: https://github.com/yourusername/prefect-deployments-toolkit/releases/tag/v0.0.8
+[0.0.8]: https://github.com/dyvenia/prefect-deployments-toolkit/releases/tag/v0.0.8
 
 ## [0.0.7] - 2026-07-07
 
@@ -109,7 +109,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - work_queue_name added to the payload for rest api
 - description, version, concurrency_limit, concurrency_options added to the payload for rest api
 
-[0.0.7]: https://github.com/yourusername/prefect-deployments-toolkit/releases/tag/v0.0.7
+[0.0.7]: https://github.com/dyvenia/prefect-deployments-toolkit/releases/tag/v0.0.7
 
 ## [0.0.6] - 2026-07-06
 
@@ -120,7 +120,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - prefect_api merged into prefect_rest
 - logs refinement - avoid duplicated get_flow_ids_for_deployment
 
-[0.0.6]: https://github.com/yourusername/prefect-deployments-toolkit/releases/tag/v0.0.6
+[0.0.6]: https://github.com/dyvenia/prefect-deployments-toolkit/releases/tag/v0.0.6
 
 ## [0.0.5] - 2026-07-06
 
@@ -128,7 +128,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - module import fix
 
-[0.0.5]: https://github.com/yourusername/prefect-deployments-toolkit/releases/tag/v0.0.5
+[0.0.5]: https://github.com/dyvenia/prefect-deployments-toolkit/releases/tag/v0.0.5
 
 ## [0.0.4] - 2026-07-06
 
@@ -137,7 +137,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - prefect OSS support
 - get_modified_deployments performance improvements - quicker yaml load with CSafeLoader fix
 
-[0.0.4]: https://github.com/yourusername/prefect-deployments-toolkit/releases/tag/v0.0.4
+[0.0.4]: https://github.com/dyvenia/prefect-deployments-toolkit/releases/tag/v0.0.4
 
 ## [0.0.3] - 2026-07-06
 
@@ -147,7 +147,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - get_modified_deployments performance improvements - single subprocess for all deployments
 - serializing entrypoint imports process-wide to avoid deadlocks
 
-[0.0.3]: https://github.com/yourusername/prefect-deployments-toolkit/releases/tag/v0.0.3
+[0.0.3]: https://github.com/dyvenia/prefect-deployments-toolkit/releases/tag/v0.0.3
 
 ## [0.0.2] - 2026-07-04
 
@@ -155,7 +155,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Logging adjustments
 
-[0.0.2]: https://github.com/yourusername/prefect-deployments-toolkit/releases/tag/v0.0.2
+[0.0.2]: https://github.com/dyvenia/prefect-deployments-toolkit/releases/tag/v0.0.2
 
 ## [0.0.1] - 2026-07-03
 
@@ -171,4 +171,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Thread-safe, non-interleaved log buffering for concurrent deployment runs.
 - YAML schedule validation (rejects singular `schedule` key, empty `schedules`, and entries missing `cron`).
 
-[0.0.1]: https://github.com/yourusername/prefect-deployments-toolkit/releases/tag/v0.0.1
+[0.0.1]: https://github.com/dyvenia/prefect-deployments-toolkit/releases/tag/v0.0.1
