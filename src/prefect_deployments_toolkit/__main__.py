@@ -174,9 +174,9 @@ def main() -> None:
         backend=args.backend,
         enforce_unique_deployment_names=args.enforce_unique_deployment_names == "true",
         models_dir=args.models_dir,
-        add_work_queue_tag=args.add_work_queue_tag,
-        add_path_tags=args.add_path_tags,
-        key_value_tags=args.key_value_tags,
+        add_work_queue_tag=args.add_work_queue_tag == "true",
+        add_path_tags=args.add_path_tags == "true",
+        key_value_tags=args.key_value_tags == "true",
     )
 
     total = len(names)

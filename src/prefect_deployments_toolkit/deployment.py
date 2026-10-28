@@ -124,7 +124,7 @@ def _cleanup_duplicate_deployments(
 def _build_tags(
     ctx: DeploymentContext, merged_file: Path, full_name: str, yaml_file: Path
 ) -> list[str]:
-    tag_val = f"dev={ctx.tag}" if ctx.key_value_tags else ctx.tag
+    tag_val = f"env={ctx.tag}" if ctx.key_value_tags else ctx.tag
     ref_val = f"ref={ctx.reference}" if ctx.key_value_tags else ctx.reference
 
     tags = [tag_val, ref_val]

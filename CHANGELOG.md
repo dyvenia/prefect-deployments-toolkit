@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.8] - 2026-10-28
+
+### Changed
+
+- Changed the key-value tag prefix for the deployment tag from `dev=` to `env=` when using `--key-value-tags`.
+
+### Fixed
+
+- Fixed an issue where the `--add-work-queue-tag`, `--add-path-tags`, and `--key-value-tags` flags were always evaluating to true due to string parsing.
+
+[0.1.8]: https://github.com/yourusername/prefect-deployments-toolkit/releases/tag/v0.1.8
+
 ## [0.1.7] - 2026-10-28
 
 ### Changed
