@@ -7,6 +7,7 @@ import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from . import prefect_cli, prefect_rest, yaml_utils
 
@@ -155,8 +156,8 @@ def _build_job_variables(
     ctx: DeploymentContext,
     merged_file: Path,
     full_name: str,
-) -> dict[str, str]:
-    job_vars: dict[str, str] = {"name": full_name}
+) -> dict[str, Any]:
+    job_vars: dict[str, Any] = {"name": full_name}
 
     if ctx.is_non_default_branch:
         base = f"/opt/prefect/{ctx.repo_name}-{ctx.reference}"
@@ -174,7 +175,7 @@ def _build_job_variables(
     for key, value in yaml_job_vars.items():
         if key == "image" and "image" in job_vars:
             continue
-        job_vars[key] = str(value)
+        job_vars[key] = value
 
     return job_vars
 

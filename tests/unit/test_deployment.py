@@ -346,13 +346,19 @@ class TestBuildJobVariables:
         assert jv["cpu"] == "4"
         assert jv["memory"] == "8Gi"
 
-    def test_yaml_var_values_coerced_to_str(self):
+    @pytest.mark.parametrize("value", [3, False, {"enabled": True}, ["a", "b"]])
+    def test_yaml_var_values_preserve_type(self, value):
         from prefect_deployments_toolkit.deployment import _build_job_variables
 
         ctx = _make_ctx(reference="main")
-        with patch(f"{MOD}.yaml_utils.get_job_variables", return_value={"replicas": 3}):
+        with patch(
+            f"{MOD}.yaml_utils.get_job_variables",
+            return_value={"setting": value},
+        ):
             jv = _build_job_variables(ctx, Path("/tmp/m.yaml"), "my-flow")
-        assert jv["replicas"] == "3"
+
+        assert jv["setting"] == value
+        assert type(jv["setting"]) is type(value)
 
 
 # ---------------------------------------------------------------------------

@@ -54,6 +54,7 @@ import sys
 import threading
 import time
 from pathlib import Path
+from typing import Any
 
 import httpx
 import yaml as _yaml
@@ -446,7 +447,7 @@ def _get_cached_variable(variable_name: str):
     return value
 
 
-def _resolve_variables(value):
+def _resolve_variables(value: Any) -> Any:
     """Recursively resolve '{{ prefect.variables.NAME }}' placeholders.
 
     NOTE: intentionally does NOT resolve '{{ prefect.blocks.* }}' —
@@ -456,8 +457,9 @@ def _resolve_variables(value):
     same as `pull_steps` already are.
     """
     if isinstance(value, str):
-        if not _VARIABLE_PATTERN.search(value):
-            return value
+        match = _VARIABLE_PATTERN.fullmatch(value)
+        if match:
+            return _get_cached_variable(match.group(1))
 
         def _replace(match: re.Match) -> str:
             return str(_get_cached_variable(match.group(1)))
@@ -476,7 +478,7 @@ def _resolve_variables(value):
 def deploy(
     deployment_name: str,
     tags: list[str],
-    job_variables: dict[str, str],
+    job_variables: dict[str, Any],
     prefect_file: Path,
 ) -> None:
     """Create or update a single deployment via the Prefect REST API.
@@ -513,7 +515,7 @@ def deploy(
         "work_queue_name": work_queue_name,
         "parameters": parameters,
         "parameter_openapi_schema": parameter_openapi_schema,
-        "job_variables": job_variables,
+        "job_variables": _resolve_variables(job_variables),
         "tags": tags,
         "pull_steps": pull_steps,
         "schedules": schedules,

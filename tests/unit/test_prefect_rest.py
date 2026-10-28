@@ -480,6 +480,8 @@ class TestResolveVariables:
 
         assert pr._resolve_variables(123) == 123
         assert pr._resolve_variables(None) is None
+        assert pr._resolve_variables(True) is True
+        assert pr._resolve_variables(False) is False
 
     def test_raises_when_variable_does_not_exist(self, monkeypatch):
         from prefect_deployments_toolkit import prefect_rest as pr
@@ -500,6 +502,15 @@ class TestResolveVariables:
             pr._resolve_variables("{{ prefect.variables.x }}")
         mock_get.assert_called_once()
 
+    @pytest.mark.parametrize("value", [{"enabled": True}, ["a", "b"], 3, False])
+    def test_full_placeholder_preserves_type(self, value):
+        from prefect_deployments_toolkit import prefect_rest as pr
+
+        with patch(f"{MOD}._get_cached_variable", return_value=value):
+            result = pr._resolve_variables("{{ prefect.variables.setting }}")
+
+        assert result == value
+        assert type(result) is type(value)
 
 # ---------------------------------------------------------------------------
 # _build_api_schedules
@@ -676,3 +687,49 @@ class TestRestDeleteSchedule:
         assert method == "DELETE"
         assert "dep-123" in url
         assert "sched-1" in url
+
+
+# ---------------------------------------------------------------------------
+# test_resolves_job_variables_in_request (REST public API)
+# ---------------------------------------------------------------------------
+
+class TestRestDeploy:
+    def test_resolves_job_variables_in_request(self, monkeypatch, tmp_path):
+        from prefect_deployments_toolkit import prefect_rest as pr
+
+        monkeypatch.setenv("PREFECT_API_URL", SELF_HOSTED_URL)
+
+        spec = {
+            "entrypoint": "flows/f.py:my_flow",
+            "work_pool": {"name": "my-pool"},
+        }
+        flow = MagicMock()
+        flow.name = "my-flow"
+        flow.parameters.model_dump.return_value = {}
+        setting = {"enabled": True}
+
+        with (
+            patch(
+                f"{MOD}._find_deployment_spec",
+                return_value={"spec": spec, "pull_steps": []},
+            ),
+            patch(f"{MOD}._resolve_flow_object", return_value=flow),
+            patch(
+                f"{MOD}._get_or_create_flow_id_by_name",
+                return_value="fid-1",
+            ),
+            patch(f"{MOD}._get_cached_variable", return_value=setting),
+            patch(
+                f"{MOD}.request",
+                return_value=_response(200, {"id": "dep-1"}),
+            ) as mock_request,
+        ):
+            pr.deploy(
+                "my-dep",
+                [],
+                {"setting": "{{ prefect.variables.setting }}"},
+                tmp_path / "prefect.yaml",
+            )
+
+        payload = mock_request.call_args.kwargs["json"]
+        assert payload["job_variables"] == {"setting": setting}
