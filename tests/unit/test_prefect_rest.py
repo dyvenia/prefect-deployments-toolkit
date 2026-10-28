@@ -512,6 +512,7 @@ class TestResolveVariables:
         assert result == value
         assert type(result) is type(value)
 
+
 # ---------------------------------------------------------------------------
 # _build_api_schedules
 # ---------------------------------------------------------------------------
@@ -692,6 +693,7 @@ class TestRestDeleteSchedule:
 # ---------------------------------------------------------------------------
 # test_resolves_job_variables_in_request (REST public API)
 # ---------------------------------------------------------------------------
+
 
 class TestRestDeploy:
     def test_resolves_job_variables_in_request(self, monkeypatch, tmp_path):
