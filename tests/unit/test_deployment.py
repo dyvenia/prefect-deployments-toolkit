@@ -912,7 +912,7 @@ class TestApplySingleDeployment:
         ):
             tags = _build_tags(ctx, Path("/tmp/merged.yaml"), "my-flow", yaml_file)
 
-        assert "dev=v1.0" in tags
+        assert "env=v1.0" in tags
         assert "ref=main" in tags
         assert "custom-yaml-tag" in tags  # YAML tags remain untouched
         assert "queue=my-queue" in tags
