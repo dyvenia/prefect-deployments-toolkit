@@ -10,6 +10,7 @@ python -m apply_deployments \
     --custom-image "" \
     --deployments-dir prefect/deployments \
     --dev-work-pool lapp-dev-work-pool-prefect3 \
+    --dev-name-prefix dev-- \
     --backend cli \
     --enforce-unique-deployment-names false
 """
@@ -68,6 +69,11 @@ def _parse_args() -> argparse.Namespace:
         "--dev-work-pool",
         default="",
         help="Dev work pool name. When set with --tag=dev, activates dev overrides.",
+    )
+    parser.add_argument(
+        "--dev-name-prefix",
+        default="dev--",
+        help="Prefix for dev deployment names (default: dev--).",
     )
     parser.add_argument(
         "--max-workers",
@@ -171,6 +177,7 @@ def main() -> None:
         custom_image=args.custom_image,
         deployments_dir=Path(args.deployments_dir),
         dev_prefect_work_pool_name=args.dev_work_pool,
+        dev_name_prefix=args.dev_name_prefix,
         backend=args.backend,
         enforce_unique_deployment_names=args.enforce_unique_deployment_names == "true",
         models_dir=args.models_dir,
