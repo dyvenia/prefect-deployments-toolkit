@@ -54,6 +54,7 @@ python -m prefect_deployments_toolkit \
   --custom-image "" \
   --deployments-dir deployments \
   --dev-work-pool my-dev-work-pool \
+  --dev-name-prefix dev-- \
   --backend rest \
   --enforce-unique-deployment-names false
 ```

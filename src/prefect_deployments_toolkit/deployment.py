@@ -34,6 +34,7 @@ class DeploymentContext:
     add_work_queue_tag: bool = False
     add_path_tags: bool = False
     key_value_tags: bool = False
+    dev_name_prefix: str = DEV_PREFIX
 
     @property
     def is_dev(self) -> bool:
@@ -227,7 +228,7 @@ def remove_deployment(
 def apply_single_deployment(deployment_name: str, ctx: DeploymentContext) -> None:
     """Apply (create/update) or remove a single deployment."""
     yaml_file = yaml_utils.find_deployment_file(deployment_name, ctx.deployments_dir)
-    prefix = DEV_PREFIX if ctx.is_dev else ""
+    prefix = ctx.dev_name_prefix if ctx.is_dev else ""
     full_name = f"{prefix}{deployment_name}"
 
     flow_id, flow_name = _resolve_flow_name(full_name, ctx)
@@ -248,7 +249,10 @@ def apply_single_deployment(deployment_name: str, ctx: DeploymentContext) -> Non
 
         if ctx.is_dev:
             yaml_utils.apply_dev_overrides(
-                merged_file, deployment_name, DEV_PREFIX, ctx.dev_prefect_work_pool_name
+                merged_file,
+                deployment_name,
+                ctx.dev_name_prefix,
+                ctx.dev_prefect_work_pool_name,
             )
 
         yaml_utils.validate_schedule(merged_file, full_name)
