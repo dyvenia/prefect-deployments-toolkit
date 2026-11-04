@@ -23,7 +23,7 @@ import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-from .deployment import DeploymentContext, apply_single_deployment
+from .deployment import DEV_PREFIX, DeploymentContext, apply_single_deployment
 from .log_buffer import buffered_deployment_log
 
 logger = logging.getLogger(__name__)
@@ -72,8 +72,8 @@ def _parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--dev-name-prefix",
-        default="dev--",
-        help="Prefix for dev deployment names (default: dev--).",
+        default=DEV_PREFIX,
+        help=f"Prefix for dev deployment names (default: {DEV_PREFIX}).",
     )
     parser.add_argument(
         "--max-workers",
