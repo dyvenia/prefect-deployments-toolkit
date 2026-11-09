@@ -5,12 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-11-09
+
+### Changed
+
+- Renamed the `--dev-work-pool` parameter to `--custom-dev-work-pool` to make clear that it sets a custom work pool, which is not the default for dev deployments (the default work pool is taken from `prefect_base.yaml`). **NOTE:** This is a breaking change: update any callers that pass `--dev-work-pool`.
+
 ## [0.1.9] - 2026-11-09
 
 ### Added
 
 - `--dev-name-prefix` parameter added to configure the prefix applied to deployment names on dev environments (default: `dev--`). Set it to an empty string to deploy dev deployments without a prefix.
 
+[0.2.0]: https://github.com/dyvenia/prefect-deployments-toolkit/releases/tag/v0.2.0
 [0.1.9]: https://github.com/dyvenia/prefect-deployments-toolkit/releases/tag/v0.1.9
 
 ## [0.1.8] - 2026-10-28

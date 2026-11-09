@@ -53,7 +53,7 @@ python -m prefect_deployments_toolkit \
   --repo-name my-flows-repo \
   --custom-image "" \
   --deployments-dir deployments \
-  --dev-work-pool my-dev-work-pool \
+  --custom-dev-work-pool my-dev-work-pool \
   --dev-name-prefix dev-- \
   --backend rest \
   --enforce-unique-deployment-names false

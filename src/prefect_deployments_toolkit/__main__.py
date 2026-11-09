@@ -9,7 +9,7 @@ python -m apply_deployments \
     --repo-name edp-flows \
     --custom-image "" \
     --deployments-dir prefect/deployments \
-    --dev-work-pool lapp-dev-work-pool-prefect3 \
+    --custom-dev-work-pool lapp-dev-work-pool-prefect3 \
     --dev-name-prefix dev-- \
     --backend cli \
     --enforce-unique-deployment-names false
@@ -66,9 +66,9 @@ def _parse_args() -> argparse.Namespace:
         help="Path to the deployments directory.",
     )
     parser.add_argument(
-        "--dev-work-pool",
+        "--custom-dev-work-pool",
         default="",
-        help="Dev work pool name. When set with --tag=dev, activates dev overrides.",
+        help="Custom dev work pool name. When set with --tag=dev, activates dev overrides.",
     )
     parser.add_argument(
         "--dev-name-prefix",
@@ -176,7 +176,7 @@ def main() -> None:
         repo_name=args.repo_name,
         custom_image=args.custom_image,
         deployments_dir=Path(args.deployments_dir),
-        dev_prefect_work_pool_name=args.dev_work_pool,
+        dev_prefect_work_pool_name=args.custom_dev_work_pool,
         dev_name_prefix=args.dev_name_prefix,
         backend=args.backend,
         enforce_unique_deployment_names=args.enforce_unique_deployment_names == "true",
