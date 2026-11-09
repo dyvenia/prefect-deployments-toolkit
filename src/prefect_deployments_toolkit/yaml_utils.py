@@ -104,27 +104,40 @@ def validate_schedule(merged_file: Path, deployment_name: str) -> None:
         )
 
 
-def apply_dev_overrides(
+def apply_overrides(
     merged_file: Path,
     deployment_name: str,
-    dev_prefix: str,
-    dev_work_pool: str,
+    deployment_name_prefix: str,
+    work_pool: str | None = None,
 ) -> None:
-    """Mutate the merged YAML in-place: prefix the deployment name and set the dev work pool."""
+    """Mutate the merged YAML in-place.
+
+    Prepend deployment_name_prefix to the deployment name and, if given, override its
+    work pool.
+
+    No-op when the prefix is empty and work_pool is None.
+    When work_pool is None, the work pool from prefect_base.yaml is kept.
+    """
+    new_name = f"{deployment_name_prefix}{deployment_name}"
+    if new_name == deployment_name and not work_pool:
+        return
+
     content = yaml.safe_load(merged_file.read_text())
     for d in content.get("deployments", []):
         if d.get("name") == deployment_name:
-            d["name"] = f"{dev_prefix}{deployment_name}"
-            d.setdefault("work_pool", {})["name"] = dev_work_pool
+            d["name"] = new_name
+            if work_pool:
+                d.setdefault("work_pool", {})["name"] = work_pool
             break
     merged_file.write_text(
         yaml.dump(content, default_flow_style=False, allow_unicode=True)
     )
-    logger.info(
-        "[DEV] Name prefixed with '%s', work pool set to '%s'.",
-        dev_prefix,
-        dev_work_pool,
-    )
+    if work_pool:
+        logger.info(
+            "Deployment renamed to '%s', work pool set to '%s'.", new_name, work_pool
+        )
+    else:
+        logger.info("Deployment renamed to '%s'.", new_name)
 
 
 def set_git_clone_branch(merged_file: Path, branch: str) -> None:

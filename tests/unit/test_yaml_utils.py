@@ -7,7 +7,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 import yaml
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -165,36 +164,55 @@ class TestValidateSchedule:
 
 
 # ---------------------------------------------------------------------------
-# apply_dev_overrides
+# apply_overrides
 # ---------------------------------------------------------------------------
 
 
-class TestApplyDevOverrides:
-    def test_prefixes_deployment_name(self, tmp_path):
-        from prefect_deployments_toolkit.yaml_utils import apply_dev_overrides
+class TestApplyOverrides:
+    def test_renames_deployment_with_prefix(self, tmp_path):
+        from prefect_deployments_toolkit.yaml_utils import apply_overrides
 
         merged = write_tmp(tmp_path, "merged.yaml", MERGED_YAML)
-        apply_dev_overrides(merged, "my-flow", "dev--", "dev-pool")
+        apply_overrides(merged, "my-flow", "dev--", "dev-pool")
         parsed = yaml.safe_load(merged.read_text())
         names = [d["name"] for d in parsed["deployments"]]
         assert "dev--my-flow" in names
         assert "my-flow" not in names
 
-    def test_sets_dev_work_pool(self, tmp_path):
-        from prefect_deployments_toolkit.yaml_utils import apply_dev_overrides
+    def test_sets_work_pool(self, tmp_path):
+        from prefect_deployments_toolkit.yaml_utils import apply_overrides
 
         merged = write_tmp(tmp_path, "merged.yaml", MERGED_YAML)
-        apply_dev_overrides(merged, "my-flow", "dev--", "my-dev-pool")
+        apply_overrides(merged, "my-flow", "dev--", "my-dev-pool")
         parsed = yaml.safe_load(merged.read_text())
         dep = next(d for d in parsed["deployments"] if d["name"] == "dev--my-flow")
         assert dep["work_pool"]["name"] == "my-dev-pool"
 
-    def test_unknown_deployment_name_is_noop(self, tmp_path):
-        from prefect_deployments_toolkit.yaml_utils import apply_dev_overrides
+    def test_keeps_name_and_work_pool_when_no_overrides(self, tmp_path):
+        from prefect_deployments_toolkit.yaml_utils import apply_overrides
 
         merged = write_tmp(tmp_path, "merged.yaml", MERGED_YAML)
-        apply_dev_overrides(merged, "unknown-dep", "dev--", "dev-pool")
-        # File is rewritten but deployment names should be unchanged
+        before = merged.read_text()
+        apply_overrides(merged, "my-flow", "", None)
+        assert merged.read_text() == before
+
+    def test_keeps_work_pool_when_none(self, tmp_path):
+        from prefect_deployments_toolkit.yaml_utils import apply_overrides
+
+        merged = write_tmp(tmp_path, "merged.yaml", MERGED_YAML)
+        original_pool = yaml.safe_load(merged.read_text())["deployments"][0][
+            "work_pool"
+        ]["name"]
+        apply_overrides(merged, "my-flow", "dev--", None)
+        parsed = yaml.safe_load(merged.read_text())
+        dep = next(d for d in parsed["deployments"] if d["name"] == "dev--my-flow")
+        assert dep["work_pool"]["name"] == original_pool
+
+    def test_unknown_deployment_name_is_noop(self, tmp_path):
+        from prefect_deployments_toolkit.yaml_utils import apply_overrides
+
+        merged = write_tmp(tmp_path, "merged.yaml", MERGED_YAML)
+        apply_overrides(merged, "unknown-dep", "dev--", "dev-pool")
         parsed = yaml.safe_load(merged.read_text())
         names = [d["name"] for d in parsed["deployments"]]
         assert names == ["my-flow"]
@@ -397,8 +415,10 @@ class TestFindDeploymentFile:
         f1.touch()
         f2.touch()
         grep_out = f"{f1}:  - name: dup\n{f2}:  - name: dup\n"
-        with patch.object(
-            yaml_utils.subprocess, "run", return_value=self._mock_grep(grep_out)
+        with (
+            patch.object(
+                yaml_utils.subprocess, "run", return_value=self._mock_grep(grep_out)
+            ),
+            pytest.raises(ValueError, match="multiple files"),
         ):
-            with pytest.raises(ValueError, match="multiple files"):
-                yaml_utils.find_deployment_file("dup", tmp_path)
+            yaml_utils.find_deployment_file("dup", tmp_path)

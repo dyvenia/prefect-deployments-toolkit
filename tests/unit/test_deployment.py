@@ -1,11 +1,11 @@
 """Unit tests for prefect_deployments_toolkit.deployment."""
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch, PropertyMock
-
-from prefect_deployments_toolkit.deployment import DeploymentContext
+from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
+
+from prefect_deployments_toolkit.deployment import DeploymentContext
 
 MOD = "prefect_deployments_toolkit.deployment"
 
@@ -24,7 +24,7 @@ def _make_ctx(**overrides) -> "DeploymentContext":
         repo_name="edp-flows",
         custom_image="",
         deployments_dir=Path("deployments"),
-        dev_prefect_work_pool_name="",
+        work_pool=None,
         backend="cli",
         enforce_unique_deployment_names=False,
         models_dir="",
@@ -42,17 +42,16 @@ def _make_ctx(**overrides) -> "DeploymentContext":
 
 
 class TestDeploymentContext:
-    def test_is_dev_true_when_tag_dev_and_work_pool_set(self):
-        ctx = _make_ctx(tag="dev", dev_prefect_work_pool_name="dev-pool")
-        assert ctx.is_dev is True
+    def test_deployment_name_prefix_defaults_to_empty(self):
+        assert _make_ctx().deployment_name_prefix == ""
 
-    def test_is_dev_false_when_tag_not_dev(self):
-        ctx = _make_ctx(tag="v1.0", dev_prefect_work_pool_name="dev-pool")
-        assert ctx.is_dev is False
+    def test_dev_tag_does_not_imply_prefix(self):
+        ctx = _make_ctx(tag="dev")
+        assert ctx.deployment_name_prefix == ""
 
-    def test_is_dev_false_when_work_pool_empty(self):
-        ctx = _make_ctx(tag="dev", dev_prefect_work_pool_name="")
-        assert ctx.is_dev is False
+    def test_deployment_name_prefix_is_stored_as_given(self):
+        ctx = _make_ctx(tag="dev", deployment_name_prefix="preview--")
+        assert ctx.deployment_name_prefix == "preview--"
 
     def test_is_non_default_branch_true_for_feature_branch(self):
         ctx = _make_ctx(reference="feature/my-feature")
@@ -372,16 +371,14 @@ class TestHandleSchedules:
 
         mock_client = MagicMock()
         ctx = _make_ctx(enable_schedule=True)
-        with patch.object(
-            type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
+        with (
+            patch.object(
+                type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
+            ),
+            patch(f"{MOD}.yaml_utils.has_schedules", return_value=False),
+            patch(f"{MOD}.prefect_rest.get_schedule_ids", return_value=["s1", "s2"]),
         ):
-            with (
-                patch(f"{MOD}.yaml_utils.has_schedules", return_value=False),
-                patch(
-                    f"{MOD}.prefect_rest.get_schedule_ids", return_value=["s1", "s2"]
-                ),
-            ):
-                _handle_schedules(ctx, Path("/tmp/m.yaml"), "my-flow", "my-flow-name")
+            _handle_schedules(ctx, Path("/tmp/m.yaml"), "my-flow", "my-flow-name")
 
         assert mock_client.delete_schedule.call_count == 2
 
@@ -390,14 +387,14 @@ class TestHandleSchedules:
 
         mock_client = MagicMock()
         ctx = _make_ctx()
-        with patch.object(
-            type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
+        with (
+            patch.object(
+                type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
+            ),
+            patch(f"{MOD}.yaml_utils.has_schedules", return_value=False),
+            patch(f"{MOD}.prefect_rest.get_schedule_ids", return_value=[]),
         ):
-            with (
-                patch(f"{MOD}.yaml_utils.has_schedules", return_value=False),
-                patch(f"{MOD}.prefect_rest.get_schedule_ids", return_value=[]),
-            ):
-                _handle_schedules(ctx, Path("/tmp/m.yaml"), "my-flow", "my-flow-name")
+            _handle_schedules(ctx, Path("/tmp/m.yaml"), "my-flow", "my-flow-name")
 
         mock_client.delete_schedule.assert_not_called()
 
@@ -406,16 +403,14 @@ class TestHandleSchedules:
 
         mock_client = MagicMock()
         ctx = _make_ctx(enable_schedule=True)
-        with patch.object(
-            type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
+        with (
+            patch.object(
+                type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
+            ),
+            patch(f"{MOD}.yaml_utils.has_schedules", return_value=True),
+            patch(f"{MOD}.prefect_rest.get_schedule_ids", return_value=["s1", "s2"]),
         ):
-            with (
-                patch(f"{MOD}.yaml_utils.has_schedules", return_value=True),
-                patch(
-                    f"{MOD}.prefect_rest.get_schedule_ids", return_value=["s1", "s2"]
-                ),
-            ):
-                _handle_schedules(ctx, Path("/tmp/m.yaml"), "my-flow", "my-flow-name")
+            _handle_schedules(ctx, Path("/tmp/m.yaml"), "my-flow", "my-flow-name")
 
         assert mock_client.resume_schedule.call_count == 2
 
@@ -424,14 +419,14 @@ class TestHandleSchedules:
 
         mock_client = MagicMock()
         ctx = _make_ctx(enable_schedule=False)
-        with patch.object(
-            type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
+        with (
+            patch.object(
+                type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
+            ),
+            patch(f"{MOD}.yaml_utils.has_schedules", return_value=True),
+            patch(f"{MOD}.prefect_rest.get_schedule_ids", return_value=["s1"]),
         ):
-            with (
-                patch(f"{MOD}.yaml_utils.has_schedules", return_value=True),
-                patch(f"{MOD}.prefect_rest.get_schedule_ids", return_value=["s1"]),
-            ):
-                _handle_schedules(ctx, Path("/tmp/m.yaml"), "my-flow", "my-flow-name")
+            _handle_schedules(ctx, Path("/tmp/m.yaml"), "my-flow", "my-flow-name")
 
         mock_client.resume_schedule.assert_not_called()
 
@@ -534,27 +529,108 @@ class TestApplySingleDeployment:
         ctx = _make_ctx()
         mock_client = MagicMock()
         mock_client.deploy.return_value = ("fid-1", "my-flow-name")
-        with patch.object(
-            type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
+        with (
+            patch.object(
+                type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
+            ),
+            patch(f"{MOD}.yaml_utils.find_deployment_file", return_value=None),
+            patch(f"{MOD}._resolve_flow_name", return_value=("fid-1", "my-flow-name")),
+            patch(f"{MOD}.time.sleep"),
         ):
-            with (
-                patch(f"{MOD}.yaml_utils.find_deployment_file", return_value=None),
-                patch(
-                    f"{MOD}._resolve_flow_name", return_value=("fid-1", "my-flow-name")
-                ),
-                patch(f"{MOD}.time.sleep"),
-            ):
-                apply_single_deployment("my-flow", ctx)
+            apply_single_deployment("my-flow", ctx)
         mock_client.delete_deployment.assert_called_once_with("my-flow-name/my-flow")
 
-    def test_dev_prefix_applied_when_is_dev(self):
-        from prefect_deployments_toolkit.deployment import (
-            apply_single_deployment,
-            DEV_PREFIX,
+    def test_removal_uses_deployment_name_prefix(self):
+        from prefect_deployments_toolkit.deployment import apply_single_deployment
+
+        ctx = _make_ctx(tag="dev", deployment_name_prefix="dev--")
+        mock_client = MagicMock()
+
+        with (
+            patch.object(
+                type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
+            ),
+            patch(f"{MOD}.yaml_utils.find_deployment_file", return_value=None),
+            patch(
+                f"{MOD}._resolve_flow_name", return_value=("fid-1", "my-flow-name")
+            ) as mock_resolve,
+            patch(f"{MOD}.time.sleep"),
+        ):
+            apply_single_deployment("my-flow", ctx)
+
+        mock_resolve.assert_called_once_with("dev--my-flow", ctx)
+        mock_client.delete_deployment.assert_called_once_with(
+            "my-flow-name/dev--my-flow"
         )
 
+    def test_removal_has_no_prefix_for_dev_tag_by_default(self):
+        from prefect_deployments_toolkit.deployment import apply_single_deployment
+
+        ctx = _make_ctx(tag="dev")
+        mock_client = MagicMock()
+
+        with (
+            patch.object(
+                type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
+            ),
+            patch(f"{MOD}.yaml_utils.find_deployment_file", return_value=None),
+            patch(
+                f"{MOD}._resolve_flow_name", return_value=("fid-1", "my-flow-name")
+            ) as mock_resolve,
+            patch(f"{MOD}.time.sleep"),
+        ):
+            apply_single_deployment("my-flow", ctx)
+
+        mock_resolve.assert_called_once_with("my-flow", ctx)
+        mock_client.delete_deployment.assert_called_once_with("my-flow-name/my-flow")
+
+    def test_work_pool_override_applied_without_dev_tag(self):
+        from prefect_deployments_toolkit.deployment import apply_single_deployment
+
+        ctx = _make_ctx(tag="v1.0", work_pool="other-pool")
+        mock_client = MagicMock()
+        mock_client.deploy.return_value = ("fid-1", "my-flow-name")
+
+        with (
+            patch.object(
+                type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
+            ),
+            patch(
+                f"{MOD}.yaml_utils.find_deployment_file",
+                return_value=Path("/tmp/f.yaml"),
+            ),
+            patch(f"{MOD}._resolve_flow_name", return_value=("fid-1", "my-flow-name")),
+            patch(f"{MOD}.yaml_utils.build_merged_prefect_file"),
+            patch(f"{MOD}.yaml_utils.apply_overrides") as mock_overrides,
+            patch(f"{MOD}.yaml_utils.validate_schedule"),
+            patch(f"{MOD}.yaml_utils.has_schedules", return_value=False),
+            patch(f"{MOD}.yaml_utils.get_deployment_tags", return_value=[]),
+            patch(f"{MOD}.yaml_utils.get_job_variables", return_value={}),
+            patch(
+                f"{MOD}.prefect_rest.get_flow_ids_for_deployment",
+                return_value=["fid-1"],
+            ),
+            patch(f"{MOD}.prefect_rest.get_flow_name", return_value="my-flow-name"),
+            patch(f"{MOD}.prefect_rest.get_schedule_ids", return_value=[]),
+            patch(f"{MOD}.time.sleep"),
+        ):
+            apply_single_deployment("my-flow", ctx)
+
+        assert mock_client.deploy.call_args.args[0] == "my-flow"
+        assert mock_overrides.call_args.args[1:] == (
+            "my-flow",
+            "",
+            "other-pool",
+        )
+
+    def test_deployment_name_prefix_applied_on_deploy(self):
+        from prefect_deployments_toolkit.deployment import apply_single_deployment
+
         ctx = _make_ctx(
-            tag="dev", dev_prefect_work_pool_name="dev-pool", reference="main"
+            tag="dev",
+            work_pool="dev-pool",
+            reference="main",
+            deployment_name_prefix="dev--",
         )
         mock_client = MagicMock()
         deployed_names = []
@@ -565,80 +641,77 @@ class TestApplySingleDeployment:
 
         mock_client.deploy.side_effect = capture_deploy
 
-        with patch.object(
-            type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
+        with (
+            patch.object(
+                type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
+            ),
+            patch(
+                f"{MOD}.yaml_utils.find_deployment_file",
+                return_value=Path("/tmp/f.yaml"),
+            ),
+            patch(f"{MOD}._resolve_flow_name", return_value=("fid-1", "my-flow-name")),
+            patch(f"{MOD}.yaml_utils.build_merged_prefect_file"),
+            patch(f"{MOD}.yaml_utils.apply_overrides"),
+            patch(f"{MOD}.yaml_utils.validate_schedule"),
+            patch(f"{MOD}.yaml_utils.has_schedules", return_value=False),
+            patch(f"{MOD}.yaml_utils.get_deployment_tags", return_value=[]),
+            patch(f"{MOD}.yaml_utils.get_job_variables", return_value={}),
+            patch(
+                f"{MOD}.prefect_rest.get_flow_ids_for_deployment",
+                return_value=["fid-1"],
+            ),
+            patch(f"{MOD}.prefect_rest.get_flow_name", return_value="my-flow-name"),
+            patch(f"{MOD}.prefect_rest.get_schedule_ids", return_value=[]),
+            patch(f"{MOD}.time.sleep"),
         ):
-            with (
-                patch(
-                    f"{MOD}.yaml_utils.find_deployment_file",
-                    return_value=Path("/tmp/f.yaml"),
-                ),
-                patch(
-                    f"{MOD}._resolve_flow_name", return_value=("fid-1", "my-flow-name")
-                ),
-                patch(f"{MOD}.yaml_utils.build_merged_prefect_file"),
-                patch(f"{MOD}.yaml_utils.apply_dev_overrides"),
-                patch(f"{MOD}.yaml_utils.validate_schedule"),
-                patch(f"{MOD}.yaml_utils.has_schedules", return_value=False),
-                patch(f"{MOD}.yaml_utils.get_deployment_tags", return_value=[]),
-                patch(f"{MOD}.yaml_utils.get_job_variables", return_value={}),
-                patch(
-                    f"{MOD}.prefect_rest.get_flow_ids_for_deployment",
-                    return_value=["fid-1"],
-                ),
-                patch(f"{MOD}.prefect_rest.get_flow_name", return_value="my-flow-name"),
-                patch(f"{MOD}.prefect_rest.get_schedule_ids", return_value=[]),
-                patch(f"{MOD}.time.sleep"),
-            ):
-                apply_single_deployment("my-flow", ctx)
+            apply_single_deployment("my-flow", ctx)
 
-        assert deployed_names[0] == f"{DEV_PREFIX}my-flow"
+        assert deployed_names[0] == "dev--my-flow"
 
-    def test_custom_dev_prefix_applied_to_deployment_and_yaml(self):
+    def test_custom_prefix_applied_to_deployment_and_yaml(self):
         from prefect_deployments_toolkit.deployment import apply_single_deployment
 
-        custom_prefix = "preview--"
         ctx = _make_ctx(
             tag="dev",
-            dev_prefect_work_pool_name="dev-pool",
-            dev_name_prefix=custom_prefix,
+            work_pool="dev-pool",
+            deployment_name_prefix="preview--",
         )
         mock_client = MagicMock()
         mock_client.deploy.return_value = ("fid-1", "my-flow-name")
 
-        with patch.object(
-            type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
+        with (
+            patch.object(
+                type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
+            ),
+            patch(
+                f"{MOD}.yaml_utils.find_deployment_file",
+                return_value=Path("/tmp/f.yaml"),
+            ),
+            patch(f"{MOD}._resolve_flow_name") as mock_resolve,
+            patch(f"{MOD}.yaml_utils.build_merged_prefect_file"),
+            patch(f"{MOD}.yaml_utils.apply_overrides") as mock_overrides,
+            patch(f"{MOD}.yaml_utils.validate_schedule"),
+            patch(f"{MOD}.yaml_utils.has_schedules", return_value=False),
+            patch(f"{MOD}.yaml_utils.get_deployment_tags", return_value=[]),
+            patch(f"{MOD}.yaml_utils.get_job_variables", return_value={}),
+            patch(
+                f"{MOD}.prefect_rest.get_flow_ids_for_deployment",
+                return_value=["fid-1"],
+            ),
+            patch(f"{MOD}.prefect_rest.get_flow_name", return_value="my-flow-name"),
+            patch(f"{MOD}.prefect_rest.get_schedule_ids", return_value=[]),
+            patch(f"{MOD}.time.sleep"),
         ):
-            with (
-                patch(
-                    f"{MOD}.yaml_utils.find_deployment_file",
-                    return_value=Path("/tmp/f.yaml"),
-                ),
-                patch(f"{MOD}._resolve_flow_name") as mock_resolve,
-                patch(f"{MOD}.yaml_utils.build_merged_prefect_file"),
-                patch(f"{MOD}.yaml_utils.apply_dev_overrides") as mock_dev_overrides,
-                patch(f"{MOD}.yaml_utils.validate_schedule"),
-                patch(f"{MOD}.yaml_utils.has_schedules", return_value=False),
-                patch(f"{MOD}.yaml_utils.get_deployment_tags", return_value=[]),
-                patch(f"{MOD}.yaml_utils.get_job_variables", return_value={}),
-                patch(
-                    f"{MOD}.prefect_rest.get_flow_ids_for_deployment",
-                    return_value=["fid-1"],
-                ),
-                patch(f"{MOD}.prefect_rest.get_flow_name", return_value="my-flow-name"),
-                patch(f"{MOD}.prefect_rest.get_schedule_ids", return_value=[]),
-                patch(f"{MOD}.time.sleep"),
-            ):
-                mock_resolve.return_value = ("fid-1", "my-flow-name")
-                apply_single_deployment("my-flow", ctx)
+            mock_resolve.return_value = ("fid-1", "my-flow-name")
+            apply_single_deployment("my-flow", ctx)
 
         mock_resolve.assert_called_once_with("preview--my-flow", ctx)
         mock_client.deploy.assert_called_once()
         assert mock_client.deploy.call_args.args[0] == "preview--my-flow"
-        mock_dev_overrides.assert_called_once()
-        assert mock_dev_overrides.call_args.args[1:] == (
+        mock_overrides.assert_called_once()
+        assert mock_overrides.call_args.args[1:] == (
             "my-flow",
-            custom_prefix,
+            "preview--",
             "dev-pool",
         )
 
@@ -649,29 +722,27 @@ class TestApplySingleDeployment:
         mock_client = MagicMock()
         mock_client.deploy.return_value = ("fid-1", "my-flow-name")
 
-        with patch.object(
-            type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
+        with (
+            patch.object(
+                type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
+            ),
+            patch(
+                f"{MOD}.yaml_utils.find_deployment_file",
+                return_value=Path("/tmp/f.yaml"),
+            ),
+            patch(f"{MOD}._resolve_flow_name", return_value=("", None)),
+            patch(f"{MOD}.yaml_utils.build_merged_prefect_file"),
+            patch(f"{MOD}.yaml_utils.validate_schedule"),
+            patch(f"{MOD}.yaml_utils.set_git_clone_branch") as mock_branch,
+            patch(f"{MOD}.yaml_utils.has_schedules", return_value=False),
+            patch(f"{MOD}.yaml_utils.get_deployment_tags", return_value=[]),
+            patch(f"{MOD}.yaml_utils.get_job_variables", return_value={}),
+            patch(f"{MOD}.prefect_rest.get_flow_ids_for_deployment", return_value=[]),
+            patch(f"{MOD}.prefect_rest.get_flow_name", return_value=None),
+            patch(f"{MOD}.prefect_rest.get_schedule_ids", return_value=[]),
+            patch(f"{MOD}.time.sleep"),
         ):
-            with (
-                patch(
-                    f"{MOD}.yaml_utils.find_deployment_file",
-                    return_value=Path("/tmp/f.yaml"),
-                ),
-                patch(f"{MOD}._resolve_flow_name", return_value=("", None)),
-                patch(f"{MOD}.yaml_utils.build_merged_prefect_file"),
-                patch(f"{MOD}.yaml_utils.validate_schedule"),
-                patch(f"{MOD}.yaml_utils.set_git_clone_branch") as mock_branch,
-                patch(f"{MOD}.yaml_utils.has_schedules", return_value=False),
-                patch(f"{MOD}.yaml_utils.get_deployment_tags", return_value=[]),
-                patch(f"{MOD}.yaml_utils.get_job_variables", return_value={}),
-                patch(
-                    f"{MOD}.prefect_rest.get_flow_ids_for_deployment", return_value=[]
-                ),
-                patch(f"{MOD}.prefect_rest.get_flow_name", return_value=None),
-                patch(f"{MOD}.prefect_rest.get_schedule_ids", return_value=[]),
-                patch(f"{MOD}.time.sleep"),
-            ):
-                apply_single_deployment("my-flow", ctx)
+            apply_single_deployment("my-flow", ctx)
 
         mock_branch.assert_called_once()
         assert mock_branch.call_args[0][1] == "feature-x"
@@ -683,32 +754,30 @@ class TestApplySingleDeployment:
         mock_client = MagicMock()
         mock_client.deploy.return_value = ("fid-1", "my-flow-name")
 
-        with patch.object(
-            type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
+        with (
+            patch.object(
+                type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
+            ),
+            patch(
+                f"{MOD}.yaml_utils.find_deployment_file",
+                return_value=Path("/tmp/f.yaml"),
+            ),
+            patch(f"{MOD}._resolve_flow_name", return_value=("fid-1", "my-flow-name")),
+            patch(f"{MOD}.yaml_utils.build_merged_prefect_file"),
+            patch(f"{MOD}.yaml_utils.validate_schedule"),
+            patch(f"{MOD}.yaml_utils.set_git_clone_branch") as mock_branch,
+            patch(f"{MOD}.yaml_utils.has_schedules", return_value=False),
+            patch(f"{MOD}.yaml_utils.get_deployment_tags", return_value=[]),
+            patch(f"{MOD}.yaml_utils.get_job_variables", return_value={}),
+            patch(
+                f"{MOD}.prefect_rest.get_flow_ids_for_deployment",
+                return_value=["fid-1"],
+            ),
+            patch(f"{MOD}.prefect_rest.get_flow_name", return_value="my-flow-name"),
+            patch(f"{MOD}.prefect_rest.get_schedule_ids", return_value=[]),
+            patch(f"{MOD}.time.sleep"),
         ):
-            with (
-                patch(
-                    f"{MOD}.yaml_utils.find_deployment_file",
-                    return_value=Path("/tmp/f.yaml"),
-                ),
-                patch(
-                    f"{MOD}._resolve_flow_name", return_value=("fid-1", "my-flow-name")
-                ),
-                patch(f"{MOD}.yaml_utils.build_merged_prefect_file"),
-                patch(f"{MOD}.yaml_utils.validate_schedule"),
-                patch(f"{MOD}.yaml_utils.set_git_clone_branch") as mock_branch,
-                patch(f"{MOD}.yaml_utils.has_schedules", return_value=False),
-                patch(f"{MOD}.yaml_utils.get_deployment_tags", return_value=[]),
-                patch(f"{MOD}.yaml_utils.get_job_variables", return_value={}),
-                patch(
-                    f"{MOD}.prefect_rest.get_flow_ids_for_deployment",
-                    return_value=["fid-1"],
-                ),
-                patch(f"{MOD}.prefect_rest.get_flow_name", return_value="my-flow-name"),
-                patch(f"{MOD}.prefect_rest.get_schedule_ids", return_value=[]),
-                patch(f"{MOD}.time.sleep"),
-            ):
-                apply_single_deployment("my-flow", ctx)
+            apply_single_deployment("my-flow", ctx)
 
         mock_branch.assert_not_called()
 
@@ -721,35 +790,33 @@ class TestApplySingleDeployment:
         # pre-deploy ("fid-old", "old-flow-name") resolved by _resolve_flow_name.
         mock_client.deploy.return_value = ("fid-new", "new-flow-name")
 
-        with patch.object(
-            type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
+        with (
+            patch.object(
+                type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
+            ),
+            patch(
+                f"{MOD}.yaml_utils.find_deployment_file",
+                return_value=Path("/tmp/f.yaml"),
+            ),
+            patch(
+                f"{MOD}._resolve_flow_name",
+                return_value=("fid-old", "old-flow-name"),
+            ),
+            patch(f"{MOD}.yaml_utils.build_merged_prefect_file"),
+            patch(f"{MOD}.yaml_utils.validate_schedule"),
+            patch(f"{MOD}.yaml_utils.has_schedules", return_value=False),
+            patch(f"{MOD}.yaml_utils.get_deployment_tags", return_value=[]),
+            patch(f"{MOD}.yaml_utils.get_job_variables", return_value={}),
+            # Post-deploy: flow_id changed
+            patch(
+                f"{MOD}.prefect_rest.get_flow_ids_for_deployment",
+                return_value=["fid-new"],
+            ),
+            patch(f"{MOD}.prefect_rest.get_flow_name", return_value="new-flow-name"),
+            patch(f"{MOD}.prefect_rest.get_schedule_ids", return_value=[]),
+            patch(f"{MOD}.time.sleep"),
         ):
-            with (
-                patch(
-                    f"{MOD}.yaml_utils.find_deployment_file",
-                    return_value=Path("/tmp/f.yaml"),
-                ),
-                patch(
-                    f"{MOD}._resolve_flow_name",
-                    return_value=("fid-old", "old-flow-name"),
-                ),
-                patch(f"{MOD}.yaml_utils.build_merged_prefect_file"),
-                patch(f"{MOD}.yaml_utils.validate_schedule"),
-                patch(f"{MOD}.yaml_utils.has_schedules", return_value=False),
-                patch(f"{MOD}.yaml_utils.get_deployment_tags", return_value=[]),
-                patch(f"{MOD}.yaml_utils.get_job_variables", return_value={}),
-                # Post-deploy: flow_id changed
-                patch(
-                    f"{MOD}.prefect_rest.get_flow_ids_for_deployment",
-                    return_value=["fid-new"],
-                ),
-                patch(
-                    f"{MOD}.prefect_rest.get_flow_name", return_value="new-flow-name"
-                ),
-                patch(f"{MOD}.prefect_rest.get_schedule_ids", return_value=[]),
-                patch(f"{MOD}.time.sleep"),
-            ):
-                apply_single_deployment("my-flow", ctx)
+            apply_single_deployment("my-flow", ctx)
 
         mock_client.delete_deployment.assert_called_once_with("old-flow-name/my-flow")
 
@@ -774,9 +841,9 @@ class TestApplySingleDeployment:
                 "pathlib.Path.unlink",
                 side_effect=lambda missing_ok=False: unlinked.append(True),
             ),
+            pytest.raises(RuntimeError),
         ):
-            with pytest.raises(RuntimeError):
-                apply_single_deployment("my-flow", ctx)
+            apply_single_deployment("my-flow", ctx)
 
         assert unlinked, (
             "merged_file.unlink() should be called in finally even on exception"
@@ -789,30 +856,30 @@ class TestApplySingleDeployment:
         mock_client = MagicMock()
         mock_client.deploy.return_value = ("fid-1", "flow-name")
 
-        with patch.object(
-            type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
+        with (
+            patch.object(
+                type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
+            ),
+            patch(
+                f"{MOD}.yaml_utils.find_deployment_file",
+                return_value=Path("/tmp/f.yaml"),
+            ),
+            patch(f"{MOD}._resolve_flow_name", return_value=("fid-1", "flow-name")),
+            patch(f"{MOD}.yaml_utils.build_merged_prefect_file"),
+            patch(f"{MOD}.yaml_utils.validate_schedule"),
+            patch(f"{MOD}.yaml_utils.has_schedules", return_value=True),
+            patch(f"{MOD}.yaml_utils.set_schedules_active") as mock_active,
+            patch(f"{MOD}.yaml_utils.get_deployment_tags", return_value=[]),
+            patch(f"{MOD}.yaml_utils.get_job_variables", return_value={}),
+            patch(
+                f"{MOD}.prefect_rest.get_flow_ids_for_deployment",
+                return_value=["fid-1"],
+            ),
+            patch(f"{MOD}.prefect_rest.get_flow_name", return_value="flow-name"),
+            patch(f"{MOD}.prefect_rest.get_schedule_ids", return_value=[]),
+            patch(f"{MOD}.time.sleep"),
         ):
-            with (
-                patch(
-                    f"{MOD}.yaml_utils.find_deployment_file",
-                    return_value=Path("/tmp/f.yaml"),
-                ),
-                patch(f"{MOD}._resolve_flow_name", return_value=("fid-1", "flow-name")),
-                patch(f"{MOD}.yaml_utils.build_merged_prefect_file"),
-                patch(f"{MOD}.yaml_utils.validate_schedule"),
-                patch(f"{MOD}.yaml_utils.has_schedules", return_value=True),
-                patch(f"{MOD}.yaml_utils.set_schedules_active") as mock_active,
-                patch(f"{MOD}.yaml_utils.get_deployment_tags", return_value=[]),
-                patch(f"{MOD}.yaml_utils.get_job_variables", return_value={}),
-                patch(
-                    f"{MOD}.prefect_rest.get_flow_ids_for_deployment",
-                    return_value=["fid-1"],
-                ),
-                patch(f"{MOD}.prefect_rest.get_flow_name", return_value="flow-name"),
-                patch(f"{MOD}.prefect_rest.get_schedule_ids", return_value=[]),
-                patch(f"{MOD}.time.sleep"),
-            ):
-                apply_single_deployment("my-flow", ctx)
+            apply_single_deployment("my-flow", ctx)
 
         mock_active.assert_called_once()
         assert (

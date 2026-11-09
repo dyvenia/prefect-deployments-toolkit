@@ -9,8 +9,8 @@ python -m apply_deployments \
     --repo-name edp-flows \
     --custom-image "" \
     --deployments-dir prefect/deployments \
-    --custom-dev-work-pool lapp-dev-work-pool-prefect3 \
-    --dev-name-prefix dev-- \
+    --work-pool lapp-dev-work-pool-prefect3 \
+    --deployment-name-prefix dev-- \
     --backend cli \
     --enforce-unique-deployment-names false
 """
@@ -23,7 +23,7 @@ import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-from .deployment import DEV_PREFIX, DeploymentContext, apply_single_deployment
+from .deployment import DeploymentContext, apply_single_deployment
 from .log_buffer import buffered_deployment_log
 
 logger = logging.getLogger(__name__)
@@ -66,14 +66,14 @@ def _parse_args() -> argparse.Namespace:
         help="Path to the deployments directory.",
     )
     parser.add_argument(
-        "--custom-dev-work-pool",
+        "--work-pool",
         default="",
-        help="Custom dev work pool name. When set with --tag=dev, activates dev overrides.",
+        help="Custom work pool name. Overrides the value in prefect.yaml.",
     )
     parser.add_argument(
-        "--dev-name-prefix",
-        default=DEV_PREFIX,
-        help=f"Prefix for dev deployment names (default: {DEV_PREFIX}).",
+        "--deployment-name-prefix",
+        default="",
+        help="Prefix prepended to deployment names (e.g. 'dev--').",
     )
     parser.add_argument(
         "--max-workers",
@@ -176,8 +176,8 @@ def main() -> None:
         repo_name=args.repo_name,
         custom_image=args.custom_image,
         deployments_dir=Path(args.deployments_dir),
-        dev_prefect_work_pool_name=args.custom_dev_work_pool,
-        dev_name_prefix=args.dev_name_prefix,
+        work_pool=args.work_pool,
+        deployment_name_prefix=args.deployment_name_prefix,
         backend=args.backend,
         enforce_unique_deployment_names=args.enforce_unique_deployment_names == "true",
         models_dir=args.models_dir,
