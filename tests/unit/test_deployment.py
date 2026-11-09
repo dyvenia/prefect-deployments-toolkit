@@ -594,6 +594,54 @@ class TestApplySingleDeployment:
 
         assert deployed_names[0] == f"{DEV_PREFIX}my-flow"
 
+    def test_custom_dev_prefix_applied_to_deployment_and_yaml(self):
+        from prefect_deployments_toolkit.deployment import apply_single_deployment
+
+        custom_prefix = "preview--"
+        ctx = _make_ctx(
+            tag="dev",
+            dev_prefect_work_pool_name="dev-pool",
+            dev_name_prefix=custom_prefix,
+        )
+        mock_client = MagicMock()
+        mock_client.deploy.return_value = ("fid-1", "my-flow-name")
+
+        with patch.object(
+            type(ctx), "client", new_callable=PropertyMock, return_value=mock_client
+        ):
+            with (
+                patch(
+                    f"{MOD}.yaml_utils.find_deployment_file",
+                    return_value=Path("/tmp/f.yaml"),
+                ),
+                patch(f"{MOD}._resolve_flow_name") as mock_resolve,
+                patch(f"{MOD}.yaml_utils.build_merged_prefect_file"),
+                patch(f"{MOD}.yaml_utils.apply_dev_overrides") as mock_dev_overrides,
+                patch(f"{MOD}.yaml_utils.validate_schedule"),
+                patch(f"{MOD}.yaml_utils.has_schedules", return_value=False),
+                patch(f"{MOD}.yaml_utils.get_deployment_tags", return_value=[]),
+                patch(f"{MOD}.yaml_utils.get_job_variables", return_value={}),
+                patch(
+                    f"{MOD}.prefect_rest.get_flow_ids_for_deployment",
+                    return_value=["fid-1"],
+                ),
+                patch(f"{MOD}.prefect_rest.get_flow_name", return_value="my-flow-name"),
+                patch(f"{MOD}.prefect_rest.get_schedule_ids", return_value=[]),
+                patch(f"{MOD}.time.sleep"),
+            ):
+                mock_resolve.return_value = ("fid-1", "my-flow-name")
+                apply_single_deployment("my-flow", ctx)
+
+        mock_resolve.assert_called_once_with("preview--my-flow", ctx)
+        mock_client.deploy.assert_called_once()
+        assert mock_client.deploy.call_args.args[0] == "preview--my-flow"
+        mock_dev_overrides.assert_called_once()
+        assert mock_dev_overrides.call_args.args[1:] == (
+            "my-flow",
+            custom_prefix,
+            "dev-pool",
+        )
+
     def test_set_git_clone_branch_called_on_non_default_branch(self):
         from prefect_deployments_toolkit.deployment import apply_single_deployment
 
