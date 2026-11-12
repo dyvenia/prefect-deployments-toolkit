@@ -13,8 +13,6 @@ from . import prefect_cli, prefect_rest, yaml_utils
 
 logger = logging.getLogger(__name__)
 
-DEV_PREFIX = "dev--"
-
 
 @dataclass
 class DeploymentContext:
@@ -27,18 +25,14 @@ class DeploymentContext:
     repo_name: str
     custom_image: str
     deployments_dir: Path
-    dev_prefect_work_pool_name: str = ""
+    work_pool: str | None = None
     backend: str = "cli"  # "cli" or "rest"
     enforce_unique_deployment_names: bool = False
     models_dir: str = ""
     add_work_queue_tag: bool = False
     add_path_tags: bool = False
     key_value_tags: bool = False
-    dev_name_prefix: str = DEV_PREFIX
-
-    @property
-    def is_dev(self) -> bool:
-        return bool(self.dev_prefect_work_pool_name) and self.tag == "dev"
+    deployment_name_prefix: str = ""
 
     @property
     def is_non_default_branch(self) -> bool:
@@ -228,8 +222,7 @@ def remove_deployment(
 def apply_single_deployment(deployment_name: str, ctx: DeploymentContext) -> None:
     """Apply (create/update) or remove a single deployment."""
     yaml_file = yaml_utils.find_deployment_file(deployment_name, ctx.deployments_dir)
-    prefix = ctx.dev_name_prefix if ctx.is_dev else ""
-    full_name = f"{prefix}{deployment_name}"
+    full_name = f"{ctx.deployment_name_prefix}{deployment_name}"
 
     flow_id, flow_name = _resolve_flow_name(full_name, ctx)
 
@@ -247,13 +240,9 @@ def apply_single_deployment(deployment_name: str, ctx: DeploymentContext) -> Non
             merged_file,
         )
 
-        if ctx.is_dev:
-            yaml_utils.apply_dev_overrides(
-                merged_file,
-                deployment_name,
-                ctx.dev_name_prefix,
-                ctx.dev_prefect_work_pool_name,
-            )
+        yaml_utils.apply_overrides(
+            merged_file, deployment_name, ctx.deployment_name_prefix, ctx.work_pool
+        )
 
         yaml_utils.validate_schedule(merged_file, full_name)
 

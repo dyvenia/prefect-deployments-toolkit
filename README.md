@@ -12,7 +12,7 @@ Built for teams running many Prefect flows out of a monorepo, where each deploym
 - **Change detection** — diff deployments between two git refs (a merge request source vs. target branch, or `HEAD~1` vs. `HEAD` after a merge) and get back exactly which deployments were added, modified, or removed.
 - **Unified push / pull-request logic** — one code path handles both `pull_request` (compare local files against a fetched base branch) and `push`/`pull_request_target` (compare `HEAD~1` against `HEAD`) event styles.
 - **Dual deploy backends** — apply deployments using the `prefect` CLI as a subprocess, or bypass it entirely with direct REST API calls for faster, more controllable deploys. Both backends work against Prefect Cloud and self-hosted/OSS Prefect servers.
-- **Dev/prod environment overrides** — automatic name prefixing, work pool substitution, and schedule pausing for dev environments.
+- **Environment overrides** — optional deployment name prefixing (`--deployment-name-prefix`), work pool substitution (`--work-pool`), and schedule enable/pause control (`--enable-schedule`).
 - **Concurrent deployment application** — apply multiple deployments in parallel with clean, non-interleaved log output per deployment.
 - **Duplicate deployment name detection** — warns (or optionally cleans up) when the same deployment name resolves to more than one flow.
 
@@ -53,11 +53,13 @@ python -m prefect_deployments_toolkit \
   --repo-name my-flows-repo \
   --custom-image "" \
   --deployments-dir deployments \
-  --dev-work-pool my-dev-work-pool \
-  --dev-name-prefix dev-- \
+  --work-pool my-dev-work-pool \
+  --deployment-name-prefix dev-- \
   --backend rest \
   --enforce-unique-deployment-names false
 ```
+
+`--deployment-name-prefix` is optional and has no default. Pass a value such as `dev--` to prefix every deployment name. `--work-pool` overrides the work pool set in `prefect_base.yaml` for any tag.
 
 ## Expected Repository Layout
 
