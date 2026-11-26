@@ -69,25 +69,25 @@ python -m prefect_deployments_toolkit \
   --param "transform_and_catalog:dbt_repo_branch=feature-branch-1"
 ```
 
-| Argument | Required | Default | Description |
-| --- | --- | --- | --- |
-| `--deployment-names` | Yes | — | Comma-separated deployment names to apply or remove. |
-| `--enable-schedule` | Yes | — | Enable deployment schedules: `true` or `false`. |
-| `--tag` | Yes | — | Environment or image tag, such as `dev` or `prd`. |
-| `--reference` | Yes | — | Git branch or tag reference used for registration. |
-| `--repo-name` | Yes | — | Repository name used in branch-specific job variable paths. |
-| `--custom-image` | No | Empty string | Container image override. Takes precedence over the image configured in YAML. |
-| `--deployments-dir` | No | `deployments` | Directory containing deployment definitions and `prefect_base.yaml`. |
-| `--work-pool` | No | Empty string | Override the work pool configured in YAML. |
-| `--deployment-name-prefix` | No | Empty string | Prefix added to deployment names, such as `dev--`. |
-| `--backend` | No | `cli` | Deployment backend: `cli` or `rest`. |
-| `--enforce-unique-deployment-names` | No | `false` | Remove duplicate deployments under other flows when `true`; otherwise, only warn. |
-| `--max-workers` | No | `8` | Maximum number of deployments applied concurrently. |
-| `--models-dir` | No | Empty string | Relative dbt models directory used to generate `DBT_PROJECT_DIR` and `DBT_PROFILES_DIR` for references other than `main` or `master`. |
-| `--add-work-queue-tag` | No | `false` | Append the configured work queue name to deployment tags. |
-| `--add-path-tags` | No | `false` | Append deployment directory components relative to `--deployments-dir` as tags. |
-| `--key-value-tags` | No | `false` | Format generated tags as `env=...`, `ref=...`, `queue=...`, and `path=...`. YAML-defined tags remain unchanged. |
-| `--param` | No | No overrides | Repeatable parameter override in `FUNCTION:PARAMETER=VALUE` format. Values are strings. |
+| Argument                            | Required | Default       | Description                                                                                                                           |
+| ----------------------------------- | -------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `--deployment-names`                | Yes      | —             | Comma-separated deployment names to apply or remove.                                                                                  |
+| `--enable-schedule`                 | Yes      | —             | Enable deployment schedules: `true` or `false`.                                                                                       |
+| `--tag`                             | Yes      | —             | Environment or image tag, such as `dev` or `prd`.                                                                                     |
+| `--reference`                       | Yes      | —             | Git branch or tag reference used for registration.                                                                                    |
+| `--repo-name`                       | Yes      | —             | Repository name used in branch-specific job variable paths.                                                                           |
+| `--custom-image`                    | No       | Empty string  | Container image override. Takes precedence over the image configured in YAML.                                                         |
+| `--deployments-dir`                 | No       | `deployments` | Directory containing deployment definitions and `prefect_base.yaml`.                                                                  |
+| `--work-pool`                       | No       | Empty string  | Override the work pool configured in YAML.                                                                                            |
+| `--deployment-name-prefix`          | No       | Empty string  | Prefix added to deployment names, such as `dev--`.                                                                                    |
+| `--backend`                         | No       | `cli`         | Deployment backend: `cli` or `rest`.                                                                                                  |
+| `--enforce-unique-deployment-names` | No       | `false`       | Remove duplicate deployments under other flows when `true`; otherwise, only warn.                                                     |
+| `--max-workers`                     | No       | `8`           | Maximum number of deployments applied concurrently.                                                                                   |
+| `--models-dir`                      | No       | Empty string  | Relative dbt models directory used to generate `DBT_PROJECT_DIR` and `DBT_PROFILES_DIR` for references other than `main` or `master`. |
+| `--add-work-queue-tag`              | No       | `false`       | Append the configured work queue name to deployment tags.                                                                             |
+| `--add-path-tags`                   | No       | `false`       | Append deployment directory components relative to `--deployments-dir` as tags.                                                       |
+| `--key-value-tags`                  | No       | `false`       | Format generated tags as `env=...`, `ref=...`, `queue=...`, and `path=...`. YAML-defined tags remain unchanged.                       |
+| `--param`                           | No       | No overrides  | Repeatable parameter override in `FUNCTION:PARAMETER=VALUE` format. Values are strings.                                               |
 
 `--deployment-name-prefix` is optional. Pass a value such as `dev--` to prefix every deployment name. `--work-pool` overrides the work pool set in YAML for any tag.
 
