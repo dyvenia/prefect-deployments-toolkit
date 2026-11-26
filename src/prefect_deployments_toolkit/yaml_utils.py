@@ -183,3 +183,52 @@ def has_schedules(merged_file: Path, deployment_name: str) -> bool:
     config = load_deployment_config(merged_file, deployment_name)
     schedules = config.get("schedules")
     return bool(schedules)
+
+def apply_parameter_overrides(
+    merged_file: Path,
+    deployment_name: str,
+    overrides: tuple[tuple[str, str, str], ...],
+) -> None:
+    """Override parameters only for the selected deployment and function."""
+    if not overrides:
+        return
+
+    content = yaml.safe_load(merged_file.read_text())
+
+    for deployment in content.get("deployments", []):
+        if deployment.get("name") != deployment_name:
+            continue
+
+        function_name = deployment.get("entrypoint", "").rpartition(":")[2]
+
+        matching = {
+            key: value
+            for selector, key, value in overrides
+            if selector == function_name
+        }
+
+        if not matching:
+            return
+
+        parameters = deployment.get("parameters") or {}
+
+        if not isinstance(parameters, dict):
+            raise ValueError(
+                f"Invalid parameters for {deployment_name}"
+            )
+
+        deployment["parameters"] = {
+            **parameters,
+            **matching,
+        }
+
+        merged_file.write_text(
+            yaml.safe_dump(
+                content,
+                sort_keys=False,
+                allow_unicode=True,
+            )
+        )
+        return
+
+    raise KeyError(f"Deployment {deployment_name!r} not found")

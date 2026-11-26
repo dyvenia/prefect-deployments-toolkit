@@ -33,6 +33,7 @@ class DeploymentContext:
     add_path_tags: bool = False
     key_value_tags: bool = False
     deployment_name_prefix: str = ""
+    parameter_overrides: tuple[tuple[str, str, str], ...] = ()
 
     @property
     def is_non_default_branch(self) -> bool:
@@ -242,6 +243,12 @@ def apply_single_deployment(deployment_name: str, ctx: DeploymentContext) -> Non
 
         yaml_utils.apply_overrides(
             merged_file, deployment_name, ctx.deployment_name_prefix, ctx.work_pool
+        )
+
+        yaml_utils.apply_parameter_overrides(
+            merged_file,
+            full_name,
+            ctx.parameter_overrides,
         )
 
         yaml_utils.validate_schedule(merged_file, full_name)
