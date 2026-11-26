@@ -422,3 +422,54 @@ class TestFindDeploymentFile:
             pytest.raises(ValueError, match="multiple files"),
         ):
             yaml_utils.find_deployment_file("dup", tmp_path)
+
+# ---------------------------------------------------------------------------
+# apply_parameter_overrides
+# ---------------------------------------------------------------------------
+
+
+class TestApplyParameterOverrides:
+    @pytest.mark.parametrize(
+        ("flow", "enabled", "expected_branch"),
+        [
+            ("transform_and_catalog", True, "feature/test"),
+            ("another_flow", True, "main"),
+            ("transform_and_catalog", False, "main"),
+        ],
+    )
+    def test_overrides_only_matching_flow(
+        self, tmp_path, flow, enabled, expected_branch
+    ):
+        from prefect_deployments_toolkit.yaml_utils import (
+            apply_parameter_overrides,
+        )
+
+        content = textwrap.dedent(f"""\
+            deployments:
+              - name: dbt_intermediate
+                entrypoint: flows/dbt.py:{flow}
+                parameters: &defaults
+                  dbt_repo_branch: main
+                  dbt_selects:
+                    run: intermediate
+              - name: dbt_other
+                entrypoint: flows/dbt.py:transform_and_catalog
+                parameters: *defaults
+        """)
+        merged = write_tmp(tmp_path, "merged.yaml", content)
+        overrides = (
+            (("transform_and_catalog", "dbt_repo_branch", "feature/test"),)
+            if enabled else ()
+        )
+
+        apply_parameter_overrides(merged, "dbt_intermediate", overrides)
+
+        deployments = yaml.safe_load(merged.read_text())["deployments"]
+        assert deployments[0]["parameters"] == {
+            "dbt_repo_branch": expected_branch,
+            "dbt_selects": {"run": "intermediate"},
+        }
+        assert deployments[1]["parameters"] == {
+            "dbt_repo_branch": "main",
+            "dbt_selects": {"run": "intermediate"},
+        }

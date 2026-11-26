@@ -1033,3 +1033,25 @@ class TestApplySingleDeployment:
         assert "queue=my-queue" in tags
         assert "path=extract" in tags
         assert "path=launchpad" in tags
+
+    @pytest.mark.parametrize("prefix", ["", "dev--"])
+    def test_passes_parameter_overrides(self, prefix):
+        overrides = (
+            ("transform_and_catalog", "dbt_repo_branch", "feature/test"),
+        )
+        ctx = _make_ctx(
+            reference="main",
+            deployment_name_prefix=prefix,
+            parameter_overrides=overrides,
+        )
+        patches = self._default_patches()
+        patches[f"{MOD}.yaml_utils.apply_overrides"] = None
+        target = f"{MOD}.yaml_utils.apply_parameter_overrides"
+        patches[target] = None
+
+        mock_client, mocks = self._apply(ctx, patches)
+
+        merged_file = mock_client.deploy.call_args.args[3]
+        mocks[target].assert_called_once_with(
+            merged_file, f"{prefix}my-flow", overrides
+        )
