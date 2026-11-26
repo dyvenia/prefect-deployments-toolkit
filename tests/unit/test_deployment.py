@@ -1036,9 +1036,7 @@ class TestApplySingleDeployment:
 
     @pytest.mark.parametrize("prefix", ["", "dev--"])
     def test_passes_parameter_overrides(self, prefix):
-        overrides = (
-            ("transform_and_catalog", "dbt_repo_branch", "feature/test"),
-        )
+        overrides = (("transform_and_catalog", "dbt_repo_branch", "feature/test"),)
         ctx = _make_ctx(
             reference="main",
             deployment_name_prefix=prefix,

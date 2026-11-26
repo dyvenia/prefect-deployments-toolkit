@@ -30,16 +30,16 @@ logger = logging.getLogger(__name__)
 
 MAX_WORKERS = 8
 
+
 def _parse_param(value: str) -> tuple[str, str, str]:
     selector, colon, assignment = value.partition(":")
     key, equals, raw_value = assignment.partition("=")
 
     if not colon or not equals or not selector.strip() or not key.strip():
-        raise argparse.ArgumentTypeError(
-            "Expected FLOW:PARAMETER=VALUE"
-        )
+        raise argparse.ArgumentTypeError("Expected FLOW:PARAMETER=VALUE")
 
     return selector.strip(), key.strip(), raw_value
+
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Apply Prefect deployments.")

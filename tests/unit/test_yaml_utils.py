@@ -423,6 +423,7 @@ class TestFindDeploymentFile:
         ):
             yaml_utils.find_deployment_file("dup", tmp_path)
 
+
 # ---------------------------------------------------------------------------
 # apply_parameter_overrides
 # ---------------------------------------------------------------------------
@@ -459,7 +460,8 @@ class TestApplyParameterOverrides:
         merged = write_tmp(tmp_path, "merged.yaml", content)
         overrides = (
             (("transform_and_catalog", "dbt_repo_branch", "feature/test"),)
-            if enabled else ()
+            if enabled
+            else ()
         )
 
         apply_parameter_overrides(merged, "dbt_intermediate", overrides)

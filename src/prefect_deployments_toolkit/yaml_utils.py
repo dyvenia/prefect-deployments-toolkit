@@ -184,6 +184,7 @@ def has_schedules(merged_file: Path, deployment_name: str) -> bool:
     schedules = config.get("schedules")
     return bool(schedules)
 
+
 def apply_parameter_overrides(
     merged_file: Path,
     deployment_name: str,
@@ -213,9 +214,7 @@ def apply_parameter_overrides(
         parameters = deployment.get("parameters") or {}
 
         if not isinstance(parameters, dict):
-            raise ValueError(
-                f"Invalid parameters for {deployment_name}"
-            )
+            raise ValueError(f"Invalid parameters for {deployment_name}")
 
         deployment["parameters"] = {
             **parameters,
