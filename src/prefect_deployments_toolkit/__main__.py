@@ -31,6 +31,16 @@ logger = logging.getLogger(__name__)
 MAX_WORKERS = 8
 
 
+def _parse_param(value: str) -> tuple[str, str, str]:
+    selector, colon, assignment = value.partition(":")
+    key, equals, raw_value = assignment.partition("=")
+
+    if not colon or not equals or not selector.strip() or not key.strip():
+        raise argparse.ArgumentTypeError("Expected FLOW:PARAMETER=VALUE")
+
+    return selector.strip(), key.strip(), raw_value
+
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Apply Prefect deployments.")
     parser.add_argument(
@@ -127,6 +137,16 @@ def _parse_args() -> argparse.Namespace:
         choices=["true", "false"],
         help="Whether to format auto-generated tags as key=value pairs (default: false).",
     )
+    parser.add_argument(
+        "--param",
+        action="append",
+        type=_parse_param,
+        default=[],
+        help=(
+            "Override a parameter for deployments using the specified "
+            "entrypoint function: FLOW:PARAMETER=VALUE. Can be repeated."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -184,6 +204,7 @@ def main() -> None:
         add_work_queue_tag=args.add_work_queue_tag == "true",
         add_path_tags=args.add_path_tags == "true",
         key_value_tags=args.key_value_tags == "true",
+        parameter_overrides=tuple(args.param),
     )
 
     total = len(names)
